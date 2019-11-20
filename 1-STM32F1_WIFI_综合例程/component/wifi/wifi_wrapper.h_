@@ -1,0 +1,136 @@
+#ifndef WIFI_WRAPPER_H_H_H
+#define WIFI_WRAPPER_H_H_H
+#include <stdint.h>
+#include "wireless_rtos_components_conf.h"
+typedef enum
+{
+	VENDOR_MARVELL = 0x02df,
+}wifi_vendor_id_e;
+
+typedef enum
+{
+	MARVELL88W8801_DEV_ID = 0x9139,
+}wifi_marvell_device_id_e;
+
+/* WI-FI error */
+typedef enum
+{
+	WIFI_ERR_OK,
+	WIFI_ERR_INVALID_TYPE,
+	WIFI_ERR_NOT_INIT,
+	WIFI_ERR_INVALID_MODE,
+	WIFI_ERR_ALREDY_SCANING,
+	WIFI_ERR_SCAN_INVALID_MODE,
+	WIFI_ERR_NOT_SCANING,
+}wifi_err_e;
+
+/* WI-FI status */
+typedef enum
+{
+	WIFI_STATUS_NONE		= 0,		/* WIFI not work */
+	WIFI_STATUS_INIT		= 1,		/* WIFI init成功 */
+	WIFI_STATUS_SCANING	= 2,		/* WIFI 搜索中 */
+	WIFI_STATUS_CONN_AP= 3,		/* WIFI作为STA模式已经连接AP */
+	WIFI_STATUS_CONN_AD= 4,		/* WIFI作为STA模式已经连接ADHOC */
+	WIFI_STATUS_AP			= 5,		/* WIFI处在AP模式 */
+	WIFI_STATUS_MAX,
+}wifi_status_e;
+
+/* WI-FI type */
+typedef enum
+{
+	WIFI_TYPE_NONE = 0,
+	WIFI_TYPE_AT 	= 1,				/* WIFI device是AT命令交互，EX:ESP8266 */
+	WIFI_TYPE_SDIO	= 2,				/* WIFI device是通过SDIO交互，EX:Marvell88w8801 */
+	WIFI_TYPE_USB	= 3,				/* WIFI device是通过USB交互 */
+	WIFI_TYPE_MAX,
+}wifi_type_e;
+
+/* WI-FI mode */
+typedef enum
+{
+	WIFI_MODE_NONE			= 0x01,
+	WIFI_MODE_ADHOC			= 0x02,
+	WIFI_MODE_STA				= 0x04,
+	WIFI_MODE_AP				= 0x08,
+	WIFI_MODE_STA_AP			= 0x10,
+	WIFI_MODE_WDS				= 0x20,
+	WIFI_MODE_MONITOR		= 0x40,
+	WIFI_MODE_MESH_POINT	= 0x80,
+	WIFI_MODE_P2P_CLIENT	= 0x100,
+	WIFI_MODE_P2P_GO			= 0x200,
+	WIFI_MODE_P2P_DEVICE	= 0x400,
+	WIFI_MODE_OCB				= 0x800,
+	WIFI_MODE_MAX,
+}wifi_mode_e;
+
+
+/* Wi-Fi security */
+typedef enum
+{
+	WIFI_SECURITY_NONE		= 0,
+	WIFI_SECURITY_WEP		= 1,
+	WIFI_SECURITY_WPA		= 2,
+	WIFI_SECURITY_WPA2		= 3,
+	WIFI_SECURITY_MAX,
+}wifi_security_e;
+
+typedef struct
+{
+	uint8_t ssid[WIFI_CONF_SSID_MAX_SIZE];		/* 要搜索的ssid，如果赋值，那么只搜索此SSID */
+	uint8_t ssid_len;										/* 要搜索的ssid长度，如果是0，则代表不做过滤 */
+
+	uint8_t channel[WIFI_CONF_CHANNEL_MAX];	/* 要搜索的通道 */
+	uint8_t channel_num;								/* 要搜索的通道个数，如果是0，则在所有通道内搜索 */
+
+	uint16_t scan_max_time;							/* 搜索time */
+}scan_condition_t;
+typedef scan_condition_t * pscan_condition_t;
+
+typedef struct
+{
+	uint8_t ssid[WIFI_CONF_SSID_MAX_SIZE];		/* 连接的AP的ssid */
+	uint8_t ssid_len;										/* 连接的AP的ssid len */
+	uint8_t pwd[WIFI_CONF_PWD_MAX_SIZE];
+	uint8_t pwd_len;
+	wifi_security_e security;							/* 连接的AP的加密类型 */
+	uint8_t broadcast_ssid;
+}ap_info_t;
+typedef ap_info_t* pap_info_t;
+
+
+
+typedef struct
+{
+	wifi_status_e		status;				/* wifi device的状态 */
+	wifi_type_e 		type;					/* wifi device的接口类型 */
+	wifi_mode_e 		support_mode;		/* wifi device支持的模式 */
+	wifi_mode_e 		current_mode;		/* wifi device当前的模式 */
+	ap_info_t 			connect_ap_info;	/* wifi device连接的AP信息 */
+	ap_info_t			ap_info;				/* ap 模式的信息 */	
+}wifi_wrapper_core_t;
+typedef wifi_wrapper_core_t * pwifi_wrapper_core_t;
+
+#define WIFI_MEM_ALIGN(addr) ((void *)(((uint32_t)(addr) + 4 - 1) & ~(uint32_t)(4-1)))
+
+
+
+uint8_t wifi_reset(void);
+uint8_t wifi_start(wifi_type_e type);
+uint8_t wifi_process_packet(void);
+uint8_t wifi_stop(void);
+uint8_t wifi_change_mode(wifi_mode_e mode);
+uint8_t wifi_start_scan(pscan_condition_t scan_condition);
+uint8_t wifi_stop_scan(void);
+uint8_t wifi_connect_ap(uint8_t *ssid,uint8_t ssid_len,uint8_t *pwd,uint8_t pwd_len);
+uint8_t wifi_connect_apinfo(void);
+uint8_t wifi_disconnect_ap(void);
+uint8_t wifi_start_ap(pap_info_t ap_info);
+uint8_t wifi_disconnect_sta(uint8_t *mac_address);
+uint8_t wifi_stop_ap(void);
+uint8_t wifi_show_sta(void);
+uint8_t wifi_start_adhoc(void);
+uint8_t wifi_stop_adhoc(void);
+uint8_t wifi_connect_adhoc(void);
+uint8_t wifi_disconnect_adhoc(void);
+#endif
