@@ -153,6 +153,7 @@
             this.bwifi_cloud_mqtt_con = new System.Windows.Forms.Button();
             this.bwifi_stop = new System.Windows.Forms.Button();
             this.bwifi_start = new System.Windows.Forms.Button();
+            this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
             this.groupBox1.SuspendLayout();
             this.g_log_func.SuspendLayout();
             this.func_opt.SuspendLayout();
@@ -197,6 +198,7 @@
             this.b_board_buy.Name = "b_board_buy";
             this.b_board_buy.Size = new System.Drawing.Size(130, 65);
             this.b_board_buy.TabIndex = 6;
+            this.toolTip1.SetToolTip(this.b_board_buy, "购买开发板");
             this.b_board_buy.UseVisualStyleBackColor = true;
             this.b_board_buy.Click += new System.EventHandler(this.b_board_buy_Click);
             // 
@@ -209,6 +211,7 @@
             this.b_serial_close.Name = "b_serial_close";
             this.b_serial_close.Size = new System.Drawing.Size(95, 65);
             this.b_serial_close.TabIndex = 5;
+            this.toolTip1.SetToolTip(this.b_serial_close, "关闭串口");
             this.b_serial_close.UseVisualStyleBackColor = true;
             this.b_serial_close.Click += new System.EventHandler(this.b_serial_close_Click);
             // 
@@ -220,6 +223,7 @@
             this.b_serial_open.Name = "b_serial_open";
             this.b_serial_open.Size = new System.Drawing.Size(95, 65);
             this.b_serial_open.TabIndex = 4;
+            this.toolTip1.SetToolTip(this.b_serial_open, "打开串口");
             this.b_serial_open.UseVisualStyleBackColor = true;
             this.b_serial_open.Click += new System.EventHandler(this.b_serial_open_Click);
             // 
@@ -286,6 +290,7 @@
             this.b_serial_send.Name = "b_serial_send";
             this.b_serial_send.Size = new System.Drawing.Size(114, 67);
             this.b_serial_send.TabIndex = 3;
+            this.toolTip1.SetToolTip(this.b_serial_send, "发送数据");
             this.b_serial_send.UseVisualStyleBackColor = true;
             this.b_serial_send.Click += new System.EventHandler(this.b_serial_send_Click);
             // 
@@ -401,6 +406,7 @@
             this.bshow_ip.Name = "bshow_ip";
             this.bshow_ip.Size = new System.Drawing.Size(70, 70);
             this.bshow_ip.TabIndex = 5;
+            this.toolTip1.SetToolTip(this.bshow_ip, "显示IP地址");
             this.bshow_ip.UseVisualStyleBackColor = true;
             this.bshow_ip.Click += new System.EventHandler(this.bshow_ip_Click_1);
             // 
@@ -420,6 +426,7 @@
             this.bwifi_disconnect.Name = "bwifi_disconnect";
             this.bwifi_disconnect.Size = new System.Drawing.Size(70, 70);
             this.bwifi_disconnect.TabIndex = 5;
+            this.toolTip1.SetToolTip(this.bwifi_disconnect, "断开连接");
             this.bwifi_disconnect.UseVisualStyleBackColor = true;
             this.bwifi_disconnect.Click += new System.EventHandler(this.bwifi_disconnect_Click);
             // 
@@ -467,6 +474,7 @@
             this.bwifi_scan.Name = "bwifi_scan";
             this.bwifi_scan.Size = new System.Drawing.Size(70, 70);
             this.bwifi_scan.TabIndex = 0;
+            this.toolTip1.SetToolTip(this.bwifi_scan, "搜索");
             this.bwifi_scan.UseVisualStyleBackColor = true;
             this.bwifi_scan.Click += new System.EventHandler(this.bwifi_scan_Click);
             // 
@@ -484,6 +492,7 @@
             this.bwifi_connect.Name = "bwifi_connect";
             this.bwifi_connect.Size = new System.Drawing.Size(70, 70);
             this.bwifi_connect.TabIndex = 1;
+            this.toolTip1.SetToolTip(this.bwifi_connect, "连接");
             this.bwifi_connect.UseVisualStyleBackColor = true;
             this.bwifi_connect.Click += new System.EventHandler(this.bwifi_connect_Click);
             // 
@@ -632,6 +641,7 @@
             this.bwifi_disconnect_sta.Name = "bwifi_disconnect_sta";
             this.bwifi_disconnect_sta.Size = new System.Drawing.Size(55, 55);
             this.bwifi_disconnect_sta.TabIndex = 13;
+            this.toolTip1.SetToolTip(this.bwifi_disconnect_sta, "断开STA连接");
             this.bwifi_disconnect_sta.UseVisualStyleBackColor = true;
             this.bwifi_disconnect_sta.Click += new System.EventHandler(this.bwifi_disconnect_sta_Click);
             // 
@@ -642,6 +652,7 @@
             this.bwifi_start_ap.Name = "bwifi_start_ap";
             this.bwifi_start_ap.Size = new System.Drawing.Size(55, 55);
             this.bwifi_start_ap.TabIndex = 11;
+            this.toolTip1.SetToolTip(this.bwifi_start_ap, "开启热点");
             this.bwifi_start_ap.UseVisualStyleBackColor = true;
             this.bwifi_start_ap.Click += new System.EventHandler(this.bwifi_start_ap_Click);
             // 
@@ -652,6 +663,7 @@
             this.bwifi_stop_ap.Name = "bwifi_stop_ap";
             this.bwifi_stop_ap.Size = new System.Drawing.Size(55, 55);
             this.bwifi_stop_ap.TabIndex = 12;
+            this.toolTip1.SetToolTip(this.bwifi_stop_ap, "关闭热点");
             this.bwifi_stop_ap.UseVisualStyleBackColor = true;
             this.bwifi_stop_ap.Click += new System.EventHandler(this.bwifi_stop_ap_Click);
             // 
@@ -687,6 +699,7 @@
             this.bping_result_clear.Size = new System.Drawing.Size(351, 55);
             this.bping_result_clear.TabIndex = 4;
             this.bping_result_clear.Text = "清空";
+            this.toolTip1.SetToolTip(this.bping_result_clear, "清空PING结果");
             this.bping_result_clear.UseVisualStyleBackColor = true;
             this.bping_result_clear.Click += new System.EventHandler(this.bping_result_clear_Click);
             // 
@@ -697,6 +710,7 @@
             this.bping_stop.Name = "bping_stop";
             this.bping_stop.Size = new System.Drawing.Size(55, 55);
             this.bping_stop.TabIndex = 3;
+            this.toolTip1.SetToolTip(this.bping_stop, "停止PING");
             this.bping_stop.UseVisualStyleBackColor = true;
             this.bping_stop.Click += new System.EventHandler(this.bping_stop_Click);
             // 
@@ -706,7 +720,7 @@
             this.tping_result.Multiline = true;
             this.tping_result.Name = "tping_result";
             this.tping_result.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-            this.tping_result.Size = new System.Drawing.Size(473, 274);
+            this.tping_result.Size = new System.Drawing.Size(473, 385);
             this.tping_result.TabIndex = 2;
             // 
             // tping_ip
@@ -723,6 +737,7 @@
             this.bping.Name = "bping";
             this.bping.Size = new System.Drawing.Size(55, 55);
             this.bping.TabIndex = 0;
+            this.toolTip1.SetToolTip(this.bping, "开始PING");
             this.bping.UseVisualStyleBackColor = true;
             this.bping.Click += new System.EventHandler(this.bping_Click);
             // 
@@ -933,6 +948,7 @@
             this.btcp_disconnect.Name = "btcp_disconnect";
             this.btcp_disconnect.Size = new System.Drawing.Size(75, 75);
             this.btcp_disconnect.TabIndex = 9;
+            this.toolTip1.SetToolTip(this.btcp_disconnect, "TCP断开");
             this.btcp_disconnect.UseVisualStyleBackColor = true;
             this.btcp_disconnect.Click += new System.EventHandler(this.btcp_disconnect_Click);
             // 
@@ -943,6 +959,7 @@
             this.btcp_connect.Name = "btcp_connect";
             this.btcp_connect.Size = new System.Drawing.Size(75, 75);
             this.btcp_connect.TabIndex = 8;
+            this.toolTip1.SetToolTip(this.btcp_connect, "TCP建立");
             this.btcp_connect.UseVisualStyleBackColor = true;
             this.btcp_connect.Click += new System.EventHandler(this.btcp_connect_Click);
             // 
@@ -1154,6 +1171,7 @@
             this.budp_disconnect.Name = "budp_disconnect";
             this.budp_disconnect.Size = new System.Drawing.Size(55, 55);
             this.budp_disconnect.TabIndex = 1;
+            this.toolTip1.SetToolTip(this.budp_disconnect, "UDP断开");
             this.budp_disconnect.UseVisualStyleBackColor = true;
             this.budp_disconnect.Click += new System.EventHandler(this.budp_disconnect_Click);
             // 
@@ -1164,6 +1182,7 @@
             this.budp_connect.Name = "budp_connect";
             this.budp_connect.Size = new System.Drawing.Size(55, 55);
             this.budp_connect.TabIndex = 0;
+            this.toolTip1.SetToolTip(this.budp_connect, "UDP建立");
             this.budp_connect.UseVisualStyleBackColor = true;
             this.budp_connect.Click += new System.EventHandler(this.budp_connect_Click);
             // 
@@ -1368,6 +1387,7 @@
             this.bwifi_cloud_mqtt_discon.Name = "bwifi_cloud_mqtt_discon";
             this.bwifi_cloud_mqtt_discon.Size = new System.Drawing.Size(75, 75);
             this.bwifi_cloud_mqtt_discon.TabIndex = 1;
+            this.toolTip1.SetToolTip(this.bwifi_cloud_mqtt_discon, "断开云服务器");
             this.bwifi_cloud_mqtt_discon.UseVisualStyleBackColor = true;
             this.bwifi_cloud_mqtt_discon.Click += new System.EventHandler(this.bwifi_cloud_mqtt_discon_Click);
             // 
@@ -1378,6 +1398,7 @@
             this.bwifi_cloud_mqtt_con.Name = "bwifi_cloud_mqtt_con";
             this.bwifi_cloud_mqtt_con.Size = new System.Drawing.Size(75, 75);
             this.bwifi_cloud_mqtt_con.TabIndex = 0;
+            this.toolTip1.SetToolTip(this.bwifi_cloud_mqtt_con, "连接云服务器");
             this.bwifi_cloud_mqtt_con.UseVisualStyleBackColor = true;
             this.bwifi_cloud_mqtt_con.Click += new System.EventHandler(this.bwifi_cloud_mqtt_con_Click);
             // 
@@ -1389,6 +1410,7 @@
             this.bwifi_stop.Name = "bwifi_stop";
             this.bwifi_stop.Size = new System.Drawing.Size(85, 75);
             this.bwifi_stop.TabIndex = 1;
+            this.toolTip1.SetToolTip(this.bwifi_stop, "关闭Wi-Fi");
             this.bwifi_stop.UseVisualStyleBackColor = true;
             this.bwifi_stop.Click += new System.EventHandler(this.bwifi_stop_Click);
             // 
@@ -1400,6 +1422,7 @@
             this.bwifi_start.Name = "bwifi_start";
             this.bwifi_start.Size = new System.Drawing.Size(85, 75);
             this.bwifi_start.TabIndex = 0;
+            this.toolTip1.SetToolTip(this.bwifi_start, "开启Wi-Fi");
             this.bwifi_start.UseVisualStyleBackColor = true;
             this.bwifi_start.Click += new System.EventHandler(this.bwifi_start_Click);
             // 
@@ -1578,6 +1601,7 @@
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.Button bshow_ip;
         private System.Windows.Forms.Label lshow_ip;
+        private System.Windows.Forms.ToolTip toolTip1;
     }
 }
 
