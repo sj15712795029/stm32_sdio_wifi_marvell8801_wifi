@@ -246,7 +246,7 @@ namespace stm32f1_wifi
 
 
                         }
-                        //else
+                        else
 
                         t_data_recv.AppendText(recv_data_string + '\r' + '\n');
                     }

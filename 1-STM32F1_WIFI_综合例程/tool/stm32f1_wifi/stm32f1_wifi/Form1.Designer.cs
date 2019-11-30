@@ -594,7 +594,6 @@
             this.rsec_wpa2.Name = "rsec_wpa2";
             this.rsec_wpa2.Size = new System.Drawing.Size(74, 24);
             this.rsec_wpa2.TabIndex = 9;
-            this.rsec_wpa2.TabStop = true;
             this.rsec_wpa2.Text = "WAP2";
             this.rsec_wpa2.UseVisualStyleBackColor = true;
             // 
@@ -612,7 +611,6 @@
             this.rsec_wap.Name = "rsec_wap";
             this.rsec_wap.Size = new System.Drawing.Size(65, 24);
             this.rsec_wap.TabIndex = 8;
-            this.rsec_wap.TabStop = true;
             this.rsec_wap.Text = "WPA";
             this.rsec_wap.UseVisualStyleBackColor = true;
             // 
@@ -626,6 +624,7 @@
             // rsec_open
             // 
             this.rsec_open.AutoSize = true;
+            this.rsec_open.Checked = true;
             this.rsec_open.Location = new System.Drawing.Point(32, 131);
             this.rsec_open.Name = "rsec_open";
             this.rsec_open.Size = new System.Drawing.Size(71, 24);
