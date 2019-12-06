@@ -5,7 +5,7 @@
 <br>MCU我们选用STM32F103RET6,ROM 512K,RAM 64K
 <br>Wi-Fi模块我们选用Marvell88w8801,我们采用SDIO接口，完全手写驱动
 <br>另外，我们还提供丰富的外设，SPI FLASH(W25Q128)，USB device,OLED(SSD1306),OV7670(FIFO)
-<br>[![](https://img-blog.csdn.net/20160616143012974?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQv/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center)](https://shop220811498.taobao.com)
+<br>[![](https://img-blog.csdnimg.cn/20191205162412878.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl8zOTAxNzQ3OQ==,size_16,color_FFFFFF,t_70)](https://shop220811498.taobao.com)
 <br>1）BOOT切换跳帽，都接GND是MCU从默认flash启动，也就是0x0800 0000
 <br>2）摄像头接口，此接口我们接我们的OV7670摄像头
 <br>3）存储芯片，此存储芯片型号为W25Q128，方便用户存储数据
@@ -25,9 +25,9 @@
 ## 测试例程
 **此开发板一共分为两个综合测试例程**
 <br>1) 硬件测试例程（需要bilibili视频链接以及上位机图片）
-<br>![STM32F103+Marvell8801板子](https://img-blog.csdn.net/20160616143012974?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQv/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center ''STM32F103板子'')
+<br>[![](https://img-blog.csdnimg.cn/20191206095622718.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl8zOTAxNzQ3OQ==,size_16,color_FFFFFF,t_70)](https://shop220811498.taobao.com)
 <br>2) Wi-Fi测试例程（需要bilibili视频链接以及上位机图片）
-<br>![STM32F103+Marvell8801板子](https://img-blog.csdn.net/20160616143012974?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQv/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center ''STM32F103板子'')
+<br>[![](https://img-blog.csdnimg.cn/20191206095733689.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl8zOTAxNzQ3OQ==,size_16,color_FFFFFF,t_70)](https://shop220811498.taobao.com)
 ## 购买链接
 <br>[淘宝购买连接：https://shop220811498.taobao.com/](https://shop220811498.taobao.com/)
 
