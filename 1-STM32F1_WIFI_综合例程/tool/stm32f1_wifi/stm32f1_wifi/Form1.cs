@@ -291,6 +291,7 @@ namespace stm32f1_wifi
 
         private void bwifi_scan_Click(object sender, EventArgs e)
         {
+            dgwifi_scan_result.Rows.Clear();
             json_construction_send(wifi_func, operate_wifi_scan, null, null, null, null, null, null);
         }
 
@@ -345,6 +346,8 @@ namespace stm32f1_wifi
         private void bwifi_stop_ap_Click(object sender, EventArgs e)
         {
             json_construction_send(wifi_func, operate_wifi_stop_ap, null, null, null, null, null, null);
+            bwifi_start_ap.Enabled = true;
+            bwifi_stop_ap.Enabled = false;
 
         }
 
@@ -379,7 +382,8 @@ namespace stm32f1_wifi
 
         private void dgwifi_ap_con_result_CellClick(object sender, DataGridViewCellEventArgs e)
         {
-            ap_disconnect_sta = dgwifi_ap_con_result.CurrentRow.Cells[1].Value.ToString();
+            if (dgwifi_ap_con_result.CurrentRow.Cells[1].Value != null)
+                ap_disconnect_sta = dgwifi_ap_con_result.CurrentRow.Cells[1].Value.ToString();
         }
 
         private void json_status_recv_parse(json_status status)
@@ -570,7 +574,8 @@ namespace stm32f1_wifi
 
         private void dgwifi_scan_result_CellClick(object sender, DataGridViewCellEventArgs e)
         {
-            tsta_ssid.Text = dgwifi_scan_result.CurrentRow.Cells[0].Value.ToString();
+            if (dgwifi_scan_result.CurrentRow.Cells[0].Value != null)
+                tsta_ssid.Text = dgwifi_scan_result.CurrentRow.Cells[0].Value.ToString();
         }
 
         private void bping_result_clear_Click(object sender, EventArgs e)
