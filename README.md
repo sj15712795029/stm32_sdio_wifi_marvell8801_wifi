@@ -31,4 +31,4 @@
 ## 购买链接
 <br>[淘宝购买连接：https://shop220811498.taobao.com/](https://shop220811498.taobao.com/)
 ## 资料预看，购买后可全部查看
-<br>[开发手册下载](https://pan.baidu.com/s/1kQS5uHstbzwrahCS1lxQZA)
+<br>[开发手册下载](https://pan.baidu.com/s/1dcE5XYLJh0Z2T6Z5P6z4fQ)
