@@ -304,6 +304,8 @@ namespace stm32f1_wifi
         private void bwifi_disconnect_Click(object sender, EventArgs e)
         {
             json_construction_send(wifi_func, operate_wifi_disconnect, null, null, null, null, null, null);
+            bwifi_connect.Enabled = true;
+            bwifi_disconnect.Enabled = false;
 
         }
 
