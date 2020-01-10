@@ -29,6 +29,6 @@
 <br>2) Wi-Fi测试例程（需要bilibili视频链接以及上位机图片）
 <br>[![](https://img-blog.csdnimg.cn/20191206095733689.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl8zOTAxNzQ3OQ==,size_16,color_FFFFFF,t_70)](https://shop220811498.taobao.com)
 ## 购买链接
-<br>[淘宝购买连接：https://shop220811498.taobao.com/](https://shop220811498.taobao.com/)
+<br>[淘宝购买连接：点击购买Marvell8801开发板](https://item.taobao.com/item.htm?spm=a1z10.1-c-s.w4004-22329603896.8.5aeb41f9mR4na3&id=609729761614)
 ## 资料预看，购买后可全部查看
 <br>[开发手册下载](https://pan.baidu.com/s/1dcE5XYLJh0Z2T6Z5P6z4fQ)
