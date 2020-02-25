@@ -562,8 +562,15 @@ static uint8_t mrvl88w8801_ret_scan(uint8_t *rx_buffer,int len)
             security = WIFI_SECURITYTYPE_WEP;
             rates = NULL;
             ie_params = &bss_desc_set->ie_parameters;
-            ie_size = bss_desc_set->ie_length - (sizeof(bss_desc_set_t) - sizeof(bss_desc_set->ie_length) - sizeof(bss_desc_set->ie_parameters));
-            while (ie_size > 0)
+			if(bss_desc_set->ie_length > ((sizeof(bss_desc_set_t) + sizeof(bss_desc_set->ie_length) + sizeof(bss_desc_set->ie_parameters))))
+            {
+				ie_size = bss_desc_set->ie_length - (sizeof(bss_desc_set_t) - sizeof(bss_desc_set->ie_length) - sizeof(bss_desc_set->ie_parameters));
+            }
+			else
+			{
+				ie_size = 0;
+			}
+			while (ie_size > 0)
             {
                 /* ÅĞ¶Ï¸÷¸öTLV */
                 switch (ie_params->header.type)
