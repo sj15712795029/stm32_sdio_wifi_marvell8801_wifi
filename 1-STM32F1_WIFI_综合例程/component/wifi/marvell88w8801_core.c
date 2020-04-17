@@ -946,7 +946,7 @@ static uint8_t mrvl88w8801_process_cmdrsp(uint8_t *rx_buffer,int len)
     }
     case HOST_CMD_APCMD_BSS_STOP:
     {
-        pmrvl88w8801_core->bss_type = BSS_TYPE_ANY;
+        pmrvl88w8801_core->bss_type = BSS_TYPE_STA;
         ethernet_dhcpd_stop();
         break;
     }
