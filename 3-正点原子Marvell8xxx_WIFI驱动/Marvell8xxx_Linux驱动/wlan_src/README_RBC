@@ -1,0 +1,103 @@
+===============================================================================
+            U S E R  M A N U A L for Robust BT-WLAN coex (RBC)
+
+ Copyright (C) 2014-2018, Marvell International Ltd.
+ All Rights Reserved
+===============================================================================
+
+###############################
+
+# Abbreviations and acronyms
+
+###############################
+RBC - Robust BT-WLAN co-existence
+TMD - Time Distribute
+SMPS - Spatial Multiplexing Power Save
+
+###############################
+
+# Default RBC modes:
+
+###############################
+1.  For systems where BT and WLAN have seperate antennas, RBC mode is
+    automatically disabled in FW after detecting this from FEM cal data. e.g.
+    For 1x1 Dual-Ant system and 2x2 3-Ant system RBC mode is disabled.
+2.  For systems where BT and WLAN share an antenna, RBC mode is automatically
+    enabled in FW after detecting this from FEM cal data.
+    Default modes:
+    1x1 single antenna system: TMD RBC
+    2x2 2-antenna system: 1x1 SMPS RBC
+
+
+#################################
+
+# 2x2 2-antenna system RBC modes
+
+#################################
+There are three mutually exclusive RBC modes for a 2x2 system.
+The default RBC mode is 1x1 SMPS RBC. The required RBC mode must be
+configured before starting uAP or associating in-STA. The mode cannot be
+changed dynamically when any of these connections is active. The modes are
+described below:
+1.  1x1 SMPS RBC mode: WLAN switches to 1x1 FEM when BT is turned on. Also,
+    in-STA goes to SMPS mode w.r.t. ext-AP. When BT is turned off, WLAN
+    switches back to 2x2 FEM setting and in-STA moves out of SMPS.
+    uAP starts bss with only 1-stream even BT is off because it cannot
+    dynamically move between 1-stream and 2-stream rates like in-STA. To start
+    uAP with 2-stream, RBC mode has to be disabled.
+2.  1x2 SMPS RBC mode: Similar as 1x1 SMPS RBC mode. WLAN switches to 1x2 FEM
+    when BT is turned on. In this mode, it is expected that when BT is not
+    actively transmitting, WLAN can receive on both the antennas to enhance
+    the range. Note that 1-stream rates are used for receive and transmit.
+3.  2x2 TMD RBC mode: WLAN uses 2x2 antenna setting and timeshares the antenna
+    with BT.
+
+###############################
+
+# RBC mode select:
+
+###############################
+
+User can use robust_btc.conf and hostcmd to select different RBC mode:
+
+hostcmd mode_get
+hostcmd mode_timeshare
+hostcmd mode_spatial
+    This command is used to get/set Robust BT Coex.
+    mode_get:       get the current mode
+    mode_timeshare: set Robust BT Coex to timeshare mode  (default on 1x1 chips)
+    mode_spatial:   set Robust BT Coex to spatial mode    (only for, and default on 2x2 chips)
+
+    Usage:
+        mlanconfig mlanX hostcmd config/robust_btc.conf mode_get
+        mlanconfig mlanX hostcmd config/robust_btc.conf mode_timeshare
+        mlanconfig mlanX hostcmd config/robust_btc.conf mode_spatial
+
+hostcmd gpio_cfg
+    This command is used to enable/disable GPIO cfg.
+    gpio_cfg: enable/disable GPIO cfg for external bt request  (default is enable with High Polarity)
+
+    Usage:
+        mlanconfig mlanX hostcmd config/robust_btc.conf gpio_cfg
+
+hostcmd generictime
+hostcmd a2dptime
+hostcmd inquirytime
+hostcmd ap_generictime
+hostcmd ap_a2dptime
+hostcmd ap_inquirytime
+        This command is used to configure the time slice of COEX (only works in timeshare mode)
+        generictime:       configure the Bttime and Wlantime in Station Generic case
+        a2dptime:          configure the Bttime and Wlantime in Station A2DP case
+        inquirytime:       configure the Bttime and Wlantime in Station Inquiry case
+        ap_generictime:    configure the Bttime and Wlantime in Ap Generic case
+        ap_a2dptime:       configure the Bttime and Wlantime in Ap A2DP case
+        ap_inquirytime:    configure the Bttime and Wlantime in Ap Inquiry case
+
+    Usage:
+                mlanutl mlanX hostcmd config/robust_btc.conf generictime
+                mlanutl mlanX hostcmd config/robust_btc.conf a2dptime
+                mlanutl mlanX hostcmd config/robust_btc.conf inquirytim
+                mlanutl mlanX hostcmd config/robust_btc.conf ap_generictime
+                mlanutl mlanX hostcmd config/robust_btc.conf ap_a2dptime
+                mlanutl mlanX hostcmd config/robust_btc.conf ap_inquirytime

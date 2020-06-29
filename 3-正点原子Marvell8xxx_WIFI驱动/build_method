@@ -1,0 +1,2 @@
+make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- KERNELDIR=/home/zhongjun/project/linux_ALPHA/code/kernel/linux-imx-rel_imx_4.1.15_2.1.0_ga_alientek
+

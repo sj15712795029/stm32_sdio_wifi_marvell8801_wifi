@@ -1,0 +1,448 @@
+
+===============================================================================
+
+        S E T U P  I N S T R U C T I O N S F O R  *WifiDirect*
+
+Driver,FW release:
+
+1. Make sure, bg_scan.conf,uaputl.conf has SSID starting with "DIRECT-"
+2. Download uAP configuration and BG scan configuration.
+3. This version of wifidirectutl breaks the backward compatibility and will work
+with following releases -
+    8797 >= 14.xx.16.p15
+         >= 14.xx.11.p138
+    8766 >= 14.xx.11.p138
+    8787 >= 14.xx.9.p89
+
+    However, In case one needs to run the utility in backward compatibility mode
+    he can do so by running following command before running the utility -
+
+    # export WIFIDIR_USE_FIXED_IE_INDICES=1
+
+    To disable backward comaptibility mode run following command -
+
+    # export WIFIDIR_USE_FIXED_IE_INDICES=0
+
+WPSWIFIDIRECT release:
+
+1. Modify the wifidirect.conf file to specify the correct HW addresses of
+   devices. The DUT mac address and peer mac address needs to be correctly
+   entered.
+
+===============================================================================
+        U S E R  M A N U A L  F O R  WIFIDIRECTUTL
+
+NAME
+	wifidirectutl
+
+This tool can be used to configure WifiDirect parameters.
+
+------------------
+Supported Commands
+------------------
+wifidirect_mode [MODE]
+wifidirect_config [*.conf]
+wifidirect_params_config [*.conf]
+wifidirect_action_frame <*.conf> | [<PeerAddr> <Category> <OuiSubtype> <DialogToken>]
+wifidirect_discovery_request <*.conf>
+wifidirect_discovery_response <*.conf>
+
+wifidirect_cfg_discovery_period [<MinDiscPeriod> <MaxDiscPeriod>]
+wifidirect_cfg_intent [IntentValue]
+wifidirect_cfg_capability [<DeviceCapability> <GroupCapability>]
+wifidirect_cfg_noa <enable|disable> <index> [<counttype> <duration> <interval>]
+wifidirect_cfg_opp_ps <enable|disable> [<CTWindow>]
+wifidirect_cfg_invitation_list [mac_addr]
+wifidirect_cfg_listen_channel [ListenChannel]
+wifidirect_cfg_op_channel [OperatingChannel]
+wifidirect_cfg_persistent_group_record [index] [role]
+           [<groupbss> <deviceId> <ssid> <psk>] [peermac1] [peermac2]
+wifidirect_cfg_persistent_group_invoke [index] | <cancel>
+wifidirect_cfg_presence_req_params [<type> <duration> <interval>]
+wifidirect_cfg_ext_listen_time [<duration> <interval>]
+wifidirect_cfg_provisioning_params [<action> <configMethods> <devicePassword>]
+wifidirect_cfg_wps_params [<action>]
+
+wifidirect_mode [mode]
+----------
+    "./wifidirectutl <iface> wifidirect_mode [mode]"
+
+    This command is used to setup various modes for wifidirect device.
+    The mode 2 can be used only when wifidirect is started using mode 1.
+    The mode 3 should not be used for uAP.
+
+    The supported options are:
+        mode :     0 - stop wifidirect mode
+                   1 - start wifidirect mode
+                   2 - start wifidirect group owner mode
+                   3 - start wifidirect client mode
+                   4 - start wifidirect find phase
+                   5 - stop wifidirect find phase
+        empty - Get current wifidirect mode
+
+    Example:
+        ./wifidirectutl <iface> wifidirect_mode 0
+                Stop wifidirect mode.
+
+        ./wifidirectutl <iface> wifidirect_mode 1
+                Start wifidirect mode.
+
+        ./wifidirectutl <iface> wifidirect_mode
+                Get current WIFIDIRECT start/stop mode.
+
+wifidirect_config
+----------
+    "./wifidirectutl <iface> wifidirect_config [*.conf]"
+
+    This command is used to set/get the wifidirect configuration.
+
+        Example:
+        ./wifidirectutl <iface> wifidirect_config wifidirect.conf
+            Read configuration from wifidirect.conf and apply it.
+        ./wifidirectutl <iface> wifidirect_config
+            Read existing wifidirect configuration and display it.
+
+wifidirect_params_config
+----------
+    "./wifidirectutl <iface> wifidirect_params_config [*.conf]"
+
+    This command is used to set/get the wifidirect parameters configuration.
+
+        Example:
+        ./wifidirectutl <iface> wifidirect_params_config wifidirect.conf
+            Read parameter configuration from wifidirect.conf and apply it.
+        ./wifidirectutl <iface> wifidirect_params_config
+            Read existing wifidirect parameters's configuration and display it.
+
+wifidirect_action_frame
+----------
+    "./wifidirectutl <iface> wifidirect_action_frame <*.conf> | <PeerAddr> <Category> <OUISubtype> <DialogToken>"
+
+    This command is used to send action frames as specified in config file or on command line.
+
+        Example:
+        ./wifidirectutl <iface> wifidirect_action_frame wifidirect.conf
+            Read action_frame from wifidirect.conf and send to peer.
+        ./wifidirectutl <iface> wifidirect_action_frame <PeerAddr> <Category> <OUISubtype> <DialogToken>
+            Read action frame parameters from command line and send to peer.
+
+wifidirect_discovery_request
+----------
+    "./wifidirectutl <iface> wifidirect_discovery_request <*.conf>"
+
+    This command is used to send wifidirect discovery request packet.
+
+        Example:
+        ./wifidirectutl <iface> wifidirect_discovery_request wifidirect.conf
+            Read discovery packet from wifidirect.conf and send to peer.
+
+wifidirect_discovery_response
+----------
+    "./wifidirectutl <iface> wifidirect_discovery_response <*.conf>"
+
+    This command is used to send wifidirect discovery response packet.
+
+        Example:
+        ./wifidirectutl <iface> wifidirect_discovery_response wifidirect.conf
+            Read discovery packet from wifidirect.conf and send to peer.
+
+wifidirect_cfg_discovery_period
+----------
+	"./wifidirectutl <iface> wifidirect_cfg_discovery_period [<MinDiscPeriod> <MaxDiscPeriod>]"
+
+	This command is used to set or get minimum and maximum discovery period.
+
+		Example:
+		./wifidirectutl <iface> wifidirect_cfg_discovery_period 10 20
+		Set minimum discovery interval to 10 and maximum discovery
+		interval to	20.
+
+		./wifidirectutl <iface> wifidirect_cfg_discovery_period
+		Get minimum and maximum discovery interval.
+
+wifidirect_cfg_intent
+----------
+	"./wifidirectutl <iface> wifidirect_cfg_intent [IntentValue]"
+
+	This command is used to set or get intent value.
+
+		Example:
+		./wifidirectutl <iface> wifidirect_cfg_intent 12
+		Set intent value to 12.
+
+		./wifidirectutl <iface> wifidirect_cfg_intent
+		Get Group Owner Intent.
+
+wifidirect_cfg_capability
+----------
+	"./wifidirectutl <iface> wifidirect_cfg_capability [<DeviceCapability> <GroupCapability>]"
+
+	This command is used to set or get device capability and group capability.
+
+		Example:
+		./wifidirectutl <iface> wifidirect_cfg_capability 10 20
+		Set Device capability to 10 and group capability to 20
+
+		./wifidirectutl <iface> wifidirect_cfg_capability
+		Get Device capability and group capability.
+
+wifidirect_cfg_noa
+----------
+	"./wifidirectutl <iface> wifidirect_cfg_noa <enable|disable> <index> [<counttype> <duration> <interval>]"
+
+	This command is used to set or get NoA parameters like count_type, duration and
+	interval in ms when NoA is enabled. Valid value of index is [0, 1].
+
+		Example:
+		./wifidirectutl <iface> wifidirect_cfg_noa enable 0 10 50 100
+		Enable NoA and set count to 10, duration to 50ms and interval to 100 ms
+            for index 0.
+
+		./wifidirectutl <iface> wifidirect_cfg_noa disable 1
+		Disable NoA at index 1.
+
+		./wifidirectutl <iface> wifidirect_cfg_noa
+		Get NoA settings.
+
+wifidirect_cfg_opp_ps
+----------
+	"./wifidirectutl <iface> wifidirect_cfg_opp_ps <enable|disable> [<CTWindow>]"
+
+	This command is used to set or get Opportunistic power save and CT window.
+
+		Example:
+		./wifidirectutl <iface> wifidirect_cfg_opp_ps enable 50
+		Set OppPS and CTwindow value to 50.
+
+		./wifidirectutl <iface> wifidirect_cfg_opp_ps disable
+		Disable OppPS.
+
+		./wifidirectutl <iface> wifidirect_cfg_opp_ps
+		Get OppPS and CT window.
+
+wifidirect_cfg_invitation_list
+----------
+	"./wifidirectutl <iface> wifidirect_cfg_invitation_list [mac_addr]"
+
+	This command is used to set or get invitation list of peers.
+
+		Example:
+		./wifidirectutl <iface> wifidirect_cfg_invitation_list 00:50:43:20:23:34
+		Set 00:50:43:20:23:34 in invitation list of peers.
+
+		./wifidirectutl <iface> wifidirect_cfg_invitation_list
+		Get Invitation list of peers.
+
+wifidirect_cfg_listen_channel
+----------
+	"./wifidirectutl <iface> wifidirect_cfg_listen_channel [ListenChannel]"
+
+	This command is used to set or get Listen channel.
+
+		Example:
+		./wifidirectutl <iface> wifidirect_cfg_listen_channel 11
+		Set Listen channel to 11.
+
+		./wifidirectutl <iface> wifidirect_cfg_listen_channel
+		Get Listen channel.
+
+wifidirect_cfg_op_channel
+----------
+		"./wifidirectutl <iface> wifidirect_cfg_op_channel [OperatingChannel]"
+
+		This command is used to set or get Operating channel.
+
+		Example:
+		./wifidirectutl <iface> wifidirect_cfg_op_channel 11
+		Set Operating channel to 11.
+
+		./wifidirectutl <iface> wifidirect_cfg_op_channel
+		Get Operating channel.
+
+wifidirect_cfg_persistent_group_record
+----------
+		"./wifidirectutl <iface> [index] [role]
+                 [<groupbss> <deviceId> <ssid> <psk>] [peermac1] [peermac2]"
+
+		This command is used to set or get the persistent group record
+        maintained in the device. Valid index is from 0 to 3. The role should be
+        0 for client, 1 for group-owner.
+
+		Example:
+		./wifidirectutl <iface> wifidirect_cfg_persistent_group_record 0 1
+        00:50:43:12:24:36 00:50:43:13:26:39 "DIRECT-" "1234567890"
+        00:50:43:20:c2:d0
+		Set persistent group record with index 0, role as group owner, bssId and
+        device Id, ssid="DIRECT-", passphrase="1234567890", and peer mac address.
+        The passphrase get converted to PSK.
+
+		./wifidirectutl <iface> wifidirect_cfg_persistent_group_record 1 1
+        00:50:43:12:24:36 00:50:43:13:26:39 "DIRECT-" "1234567890"
+        0x1234567890123456789012345678901234567890123456789012345678901234
+		Set persistent group record with index 1, role as group owner, bssId and
+        device Id, ssid="DIRECT-", passphrase="1234567890", and peer mac address.
+        The passphrase get converted to PSK.
+        PSK is specified with "0x" prefix and 32 bytes (64 characters).
+
+		./wifidirectutl <iface> wifidirect_cfg_persistent_group_record 1
+		Get persistent group record with index 1.
+
+		./wifidirectutl <iface> wifidirect_cfg_persistent_group_record
+		Get persistent group record for all indices.
+
+wifidirect_cfg_persistent_group_invoke
+----------
+		"./wifidirectutl <iface> wifidirect_cfg_persistent_group_invoke [index] | <cancel>"
+
+		This command is used to invoke a particular persistent group record
+        from the list. Valid index is from 0 to 3.
+
+		./wifidirectutl <iface> wifidirect_cfg_persistent_group_invoke 2
+		Invoke persistent group record with index 1.
+
+		./wifidirectutl <iface> wifidirect_cfg_persistent_group_invoke cancel
+		Cancel invokation of persistent groups.
+
+wifidirect_cfg_presence_req_params
+----------
+		"./wifidirectutl <iface> wifidirect_cfg_presence_req_params [<type> <duration> <interval>]"
+
+		This command is used to set/get presence request parameters. Type should
+        be 1 for preferred values and 2 for acceptable values.
+
+		./wifidirectutl <iface> wifidirect_cfg_presence_req_params 1 50 100
+		Set duration to 50ms and interval to 100ms.
+
+		./wifidirectutl <iface> wifidirect_cfg_presence_req_params
+		Get presence request parameters.
+
+wifidirect_cfg_ext_listen_time
+----------
+		"./wifidirectutl <iface> wifidirect_cfg_ext_listen_time [<duration> <interval>]"
+
+		This command is used to set/get extended listen timing parameters.
+
+		./wifidirectutl <iface> wifidirect_cfg_ext_listen_time 1200 1300
+		Set availability period to 1200ms and availability interval to 1300 ms.
+
+		./wifidirectutl <iface> wifidirect_cfg_ext_listen_time
+		Get extended listen timing parameters.
+
+wifidirect_cfg_provisioning_params
+----------
+		"./wifidirectutl <iface> wifidirect_cfg_provisioning_params [<action> <configMethod> <devicePassword>]"
+
+		This command is used to set/get provisioning protocol parameters. Action should
+        be 1 for request parameters and 2 for response parameters.
+
+		./wifidirectutl <iface> wifidirect_cfg_provisioning_params 1 0x80 0x04
+		Set config method to 0x86 and device password to 0x04.
+
+		./wifidirectutl <iface> wifidirect_cfg_provisioning_params
+		Get Provision protocol parameters.
+
+wifidirect_cfg_wps_params
+----------
+		"./wifidirectutl <iface> wifidirect_cfg_wps_params [<action>]"
+
+		This command is used to set WPS action. action can be "pin" (pin entered),
+        "pbc"(button pressed) or "none".
+
+		Example:
+		./wifidirectutl <iface> wifidirect_cfg_wps_params pin
+		Indicates pin operation
+
+		./wifidirectutl <iface> wifidirect_cfg_wps_params none
+		Indicates no operation
+
+===============================================================================
+        U S E R  M A N U A L  F O R  WIFIDISPLAY
+
+wifidisplay_mode
+-----------
+            "./wifidirectutl <iface> wifidisplay_mode [<action>]"
+            This command is used to enable or disable wifi-display. The possible values are either 1 or 0.
+		Example:
+		./wifidirectutl <iface> wifidisplay_mode 1
+		Indicates enable wifi_display
+
+		./wifidirectutl <iface> wifidisplay_mode 0
+		Indicates disable wifi_display
+
+wifidisplay_config
+-----------
+            "./wifidirectutl <iface> wifidisplay_config [*.conf]"
+
+            This command is used to set/get the wifidisplay configuration.
+
+             Example:
+             ./wifidirectutl <iface> wifidisplay_config wifidisplay.conf
+             Read configuration from wifidisplay.conf and apply it.
+             ./wifidirectutl <iface> wifidisplay_config
+             Read existing wifidisplay configuration and display it.
+
+wifidisplay_update_devinfo
+----------
+            "./wifidirectutl <iface> wifidisplay_update_devinfo [value]"
+
+            This command is used to set the device information of wifidisplay device information subelement.
+            This command will overwrite the new device information with user defined value.
+
+             Example:
+             ./wifidirectutl <iface> wifidisplay_update_devinfo 10
+             Update device information programmed with new value 10 by overwritting existing value.
+
+wifidisplay_discovery_request
+----------
+            "./wifidirectutl <iface> wifidisplay_discovery_request [*.config]"
+
+            This command is used to send wifi display service discovery request.
+
+            Example:
+            ./wifidirectutl <iface> wifidisplay_discovery_request wifidisplay.conf
+            Read discovery packet from wifidisplay.conf and send to peer.
+
+wifidisplay_discovery_response
+----------
+           "./wifidirectutl <iface> wifidisplay_discovery_response <*.conf>"
+
+           This command is used to send wifidisplay discovery response packet.
+
+           Example:
+           ./wifidirectutl <iface> wifidisplay_discovery_response wifidisplay.conf
+           Read discovery packet from wifidisplay.conf and send to peer.
+
+===============================================================================
+        U S E R  M A N U A L  F O R  MLANEVENT
+
+NAME
+mlanevent.exe
+
+This tool can be used to listen for and obtain events from the driver
+through the netlink layer. This is only used for display/debugging purpose.
+
+----------------
+Supported events
+----------------
+WIFIDIRECT_GENERIC_EVENT
+WIFIDIRECT_SERVICE_DISCOVERY
+
+-----------------
+Details of events
+-----------------
+
+WIFIDIRECT_GENERIC_EVENT
+-----------------
+    For this event, the following information is shown:
+        + Event length.
+        + Event Type indicating Negociation, Invitation, Discoverability,
+		Provision discovery related Request or Response.
+        + Event SubType indicating Client or Group owner role.
+        + Peer MAC address.
+        + Associated WIFIDIRECT IE elements.
+
+WIFIDIRECT_SERVICE_DISCOVERY
+---------------------
+    For this event, the following information is shown:
+        + Peer MAC address.
+        + Service discovery packet details.

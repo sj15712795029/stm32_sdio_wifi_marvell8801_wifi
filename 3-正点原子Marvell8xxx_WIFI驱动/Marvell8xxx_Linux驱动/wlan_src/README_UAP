@@ -1,0 +1,2715 @@
+===============================================================================
+			U S E R  M A N U A L
+
+ Copyright (C) 2009-2018, Marvell International Ltd.
+ All Rights Reserved
+
+1) FOR DRIVER BUILD
+
+	Goto source code directory wlan_src.
+		make [clean] build
+	The driver binaries can be found in ../bin_xxxx directory.
+	The driver code supports Linux kernel up to 4.14.
+
+2) FOR DRIVER INSTALL
+
+	a) Copy sd8786_uapsta.bin | sd8787_uapsta.bin | ... to /system/etc/firmware/mrvl/
+	   directory, create the directory if it doesn't exist.
+	b) Install uAP driver,
+	   There are drv_mode, max_sta_bss, max_uap_bss etc. module parameters.
+		The bit settings of drv_mode are,
+			Bit 0 :  STA
+			Bit 1 :  uAP
+			Bit 2 :  WIFIDIRECT
+		The default drv_mode is 7.
+			Bit 4 :  NAN
+
+		max_uap_bss: Maximum number of uAP BSS (default 1, max 2)
+		uap_name: Name of the uAP interface (default: "uap")
+	   For example, to install SD8787 driver,
+	   To load driver in uAP only mode,
+		insmod mlan.ko
+		insmod sd8787.ko drv_mode=2 [fw_name=mrvl/sd8787_uapsta.bin]
+	   To switch mode between STA only, uAP only and uAPSTA in run time,
+		echo drv_mode=1 > /proc/mwlan/config		// STA mode
+		echo drv_mode=2 > /proc/mwlan/config		// uAP mode
+		echo drv_mode=3 > /proc/mwlan/config		// uAPSTA mode
+	c) Uninstall uAP driver,
+		ifconfig uapX down
+		rmmod sd8xxx
+		rmmod mlan
+
+	To load driver with MFG firmware file, use mfg_mode=1 when insmod WLAN driver and
+	specify MFG firmware name if needed.
+
+	There are some other parameters for debugging purpose etc. Use modinfo to check details.
+	  drvdbg=<bit mask of driver debug message control>
+	  dev_cap_mask=<Bit mask of the device capability>
+	  mac_addr=xx:xx:xx:xx:xx:xx <override the MAC address (in hex)>
+	  auto_ds=0|1|2 <use MLAN default | enable auto deepsleep | disable auto deepsleep>
+	  ps_mode=0|1|2 <use MLAN default | enable IEEE PS mode | disable IEEE PS mode>
+	  max_tx_buf=2048|4096|8192 <maximum AMSDU Tx buffer size>
+	  pm_keep_power=1|0 <PM keep power in suspend (default) | PM no power in suspend>
+	  shutdown_hs=1|0 <Enable HS when shutdown | No HS when shutdown (default)>
+	  cfg_11d=0|1|2 <use MLAN default | enable 11d | disable 11d>
+	  dts_enable=0|1 <Disable DTS | Enable DTS (default)>
+	  hw_test=0|1 <Disable hardware test (default) | Enable hardware test>
+	  fw_serial=0|1 <support parallel download FW | support serial download FW (default)>
+	  req_fw_nowait=0|1 <use request_firmware API (default) | use request_firmware_nowait API>
+	  init_cfg=<init config (MAC addresses, registers etc.) file name>
+		e.g. copy init_cfg.conf to firmware directory, init_cfg=mrvl/init_cfg.conf
+	  cal_data_cfg=<CAL data config file name>
+		e.g. copy cal_data.conf to firmware directory, cal_data_cfg=mrvl/cal_data.conf
+	  txpwrlimit_cfg=<Tx power limit config file name>
+		e.g. copy txpwrlimit_cfg_set.conf to firmware directory, txpwrlimit_cfg=mrvl/txpwrlimit_cfg_set.conf
+	  init_hostcmd_cfg=<init hostcmd config file name>
+		e.g. copy init_hostcmd_cfg.conf to firmware directory, init_hostcmd_cfg=mrvl/init_hostcmd_cfg.conf
+	  cfg80211_wext=<bit mask of CFG80211 and WEXT control>
+		Bit 0: STA WEXT
+		Bit 1: uAP WEXT
+		Bit 2: STA CFG80211
+		Bit 3: uAP CFG80211
+	  wq_sched_prio: Priority for work queue
+	  wq_sched_policy: Scheduling policy for work queue
+		(0: SCHED_NORMAL, 1: SCHED_FIFO, 2: SCHED_RR, 3: SCHED_BATCH, 5: SCHED_IDLE)
+		Please note that, both wq_sched_prio and wq_sched_policy should be provided
+		as module parameters. If wq_sched_policy is (0, 3 or 5), then wq_sched_prio
+		must be 0. wq_sched_prio should be 1 to 99 otherwise.
+	  rx_work=0|1|2 <default | Enable rx_work_queue | Disable rx_work_queue>
+	  low_power_mode_enable=0|1 <disable low power mode (default)| enable low power mode>
+	  When low power mode is enabled, the output power will be clipped at ~+10dBm and the
+	  expected PA current is expected to be in the 80-90 mA range for b/g/n modes
+
+	Note: On some platforms (e.g. PXA910/920) double quotation marks ("") need to used
+	for module parameters.
+		insmod sd8xxx.ko "<para1> <para2> ..."
+
+3) FOR DRIVER PROC & DEBUG
+	The following info are provided in /proc/mwlan/uapX/info.
+
+	driver_name = "uap"
+	driver_version = <driver version>
+	InterfaceName= "uapX"
+	State= "Disconnected" | "Connected"
+	MACAddress= <6-byte adapter MAC address>
+	MCCount= <multicast address count>
+	num_tx_bytes = <number of bytes sent to device>
+	num_rx_bytes = <number of bytes received from device and sent to kernel>
+	num_tx_pkts = <number of packets sent to device>
+	num_rx_pkts = <number of packets received from device and sent to kernel>
+	num_tx_pkts_dropped = <number of tx packets dropped by driver>
+	num_rx_pkts_dropped = <number of rx packets dropped by driver>
+	num_tx_pkts_err = <number of tx packets failed to send to device>
+	num_rx_pkts_err = <number of rx packets failed to receive from device>
+	num_tx_timeout =  <number of tx timeout>
+	carrier "on" | "off"
+	tx queue "stopped" | "started"
+
+	The following debug info are provided in /proc/mwlan/uapX/debug.
+
+	drvdbg = <bit masks of driver debug message control>
+		bit 0:  MMSG  		PRINTM(MMSG,...)
+		bit 1:  MFATAL		PRINTM(MFATAL,...)
+		bit 2:  MERROR		PRINTM(MERROR,...)
+		bit 3:  MDATA 		PRINTM(MDATA,...)
+		bit 4:  MCMND 		PRINTM(MCMND,...)
+		bit 5:  MEVENT		PRINTM(MEVENT,...)
+		bit 6:  MINTR 		PRINTM(MINTR,...)
+		bit 7:  MIOCTL 		PRINTM(MIOCTL,...)
+		...
+		bit 16: MDAT_D		PRINTM(MDAT_D,...), DBG_HEXDUMP(MDAT_D,...)
+		bit 17: MCMD_D		PRINTM(MCMD_D,...), DBG_HEXDUMP(MCMD_D,...)
+		bit 18: MEVT_D		PRINTM(MEVT_D,...), DBG_HEXDUMP(MEVT_D,...)
+		bit 19: MFW_D		PRINTM(MFW_D,...),  DBG_HEXDUMP(MFW_D,...)
+		bit 20: MIF_D		PRINTM(MIF_D,...),  DBG_HEXDUMP(MIF_D,...)
+		...
+		bit 28: MENTRY		PRINTM(MENTRY,...), ENTER(), LEAVE()
+		bit 29: MWARN 		PRINTM(MWARN,...)
+		bit 30: MINFO 		PRINTM(MINFO,...)
+	wmm_ac_vo = <number of packets sent to device from WMM AcVo queue>
+	wmm_ac_vi = <number of packets sent to device from WMM AcVi queue>
+	wmm_ac_be = <number of packets sent to device from WMM AcBE queue>
+	wmm_ac_bk = <number of packets sent to device from WMM AcBK queue>
+	max_tx_buf_size = <maximum Tx buffer size>
+	tx_buf_size = <current Tx buffer size>
+	curr_tx_buf_size = <current Tx buffer size in FW>
+	ps_mode = <0/1, CAM mode/PS mode>
+	ps_state = <0/1/2/3, awake state/pre-sleep state/sleep-confirm state/sleep state>
+	wakeup_dev_req = <0/1, wakeup device not required/required>
+	wakeup_tries = <wakeup device count, cleared when device awake>
+	hs_configured = <0/1, host sleep not configured/configured>
+	hs_activated = <0/1, extended host sleep not activated/activated>
+	tx_pkts_queued = <number of Tx packets queued>
+	num_bridge_pkts = <number of bridged packets>
+	num_drop_pkts = <number of dropped packets>
+	num_tx_timeout = <number of Tx timeout>
+	num_cmd_timeout = <number of timeout commands>
+	timeout_cmd_id = <command id of the last timeout command>
+	timeout_cmd_act = <command action of the last timeout command>
+	last_cmd_id = <command id of the last several commands sent to device>
+	last_cmd_act = <command action of the last several commands sent to device>
+	last_cmd_index = <0 based last command index>
+	last_cmd_resp_id = <command id of the last several command responses received from device>
+	last_cmd_resp_index = <0 based last command response index>
+	last_event = <event id of the last several events received from device>
+	last_event_index = <0 based last event index>
+	num_cmd_h2c_fail = <number of commands failed to send to device>
+	num_cmd_sleep_cfm_fail = <number of sleep confirm failed to send to device>
+	num_tx_h2c_fail = <number of data packets failed to send to device>
+	num_cmdevt_c2h_fail = <number of commands/events failed to receive from device>
+	num_rx_c2h_fail = <number of data packets failed to receive from device>
+	num_int_read_fail = <number of interrupt read failures>
+	last_int_status = <last interrupt status>
+	cmd_sent = <0/1, send command resources available/sending command to device>
+	data_sent = <0/1, send data resources available/sending data to device>
+	mp_rd_bitmap = <SDIO multi-port read bitmap>
+	curr_rd_port = <SDIO multi-port current read port>
+	mp_wr_bitmap = <SDIO multi-port write bitmap>
+	curr_wr_port = <SDIO multi-port current write port>
+	cmd_resp_received = <0/1, no cmd response to process/response received and yet to process>
+	event_received = <0/1, no event to process/event received and yet to process>
+	ioctl_pending = <number of ioctl pending>
+	tx_pending = <number of Tx packet pending>
+	rx_pending = <number of Rx packet pending>
+	lock_count = <number of lock used>
+	malloc_count = <number of malloc done>
+	mbufalloc_count = <number of mlan_buffer allocated>
+	main_state = <current state of the main process>
+	sdiocmd53w = <SDIO Cmd53 write status>
+	sdiocmd53r = <SDIO Cmd52 read status>
+	hs_skip_count = <number of skipped suspends>
+	hs_force_count = <number of forced suspends>
+
+	Example:
+		echo "drvdbg=0x7" > /proc/mwlan/uapX/debug	#enable MMSG,MFATAL,MERROR messages
+
+	Use dmesg or cat /var/log/debug to check driver debug messages.
+
+	To log driver debug messages to file,
+	a) Edit /etc/rsyslog.conf, add one line "*.debug		/var/log/debug"
+	b) touch /var/log/debug (if the file doesn't exist)
+	c) service rsyslog restart
+
+4) SOFT_RESET command
+   This command is used to perform a "soft reset" on the module.
+   The FW code will disable hardware and jump to boot code.
+   Host software will then need to re-download firmware if required.
+
+   Usage:
+	echo "soft_reset=1" > /proc/mwlan/config
+
+===============================================================================
+
+		U S E R  M A N U A L  F O R  UAPUTL
+
+NAME
+uaputl.exe [options] <command> [command parameters]]
+
+Options:
+	--help 	Display help
+	-v    	Display version
+	-i <interface>
+	-d <debug_level=0|1|2>
+
+Example:
+	./uaputl.exe --help
+		"display help for uaputl"
+
+	./uaputl.exe sys_config --help
+		"display help for sys_config command"
+
+This tool can be used to set/get uAP's settings. To change AP settings, you might
+need to issue "bss_stop" command to stop AP before making change and issue "bss_start"
+command to restart the AP after making change.
+
+------------------
+Supported Commands
+------------------
+version
+debug_level
+sys_config [CONFIG_FILE_NAME]
+bss_config [CONFIG_FILE_NAME]
+sys_info
+sys_reset
+bss_start
+bss_stop
+sta_list
+sta_deauth <STA_MAC_ADDRESS>
+sta_deauth_ext <STA_MAC_ADDRESS> <REASON_CODE>
+radioctrl [0|1]
+txratecfg [l] [m] [n]
+antcfg [m] [n]
+pscfg [MODE] [CTRL INACTTO MIN_SLEEP MAX_SLEEP MIN_AWAKE MAX_AWAKE]
+mic_err <STA_MAC_ADDRESS>
+key_material <MAC_ADDRESS> <KEY> [KEY_ID]
+sys_cfg_custom_ie [INDEX] [MASK] [IEBuffer]
+coex_config [CONFIG_FILE_NAME]
+hscfg [condition [[GPIO# [gap]]]]
+hssetpara condition [[GPIO# [gap]]]
+sys_cfg_wmm  [qosinfo=<qosinfo>]
+             [AC_BE AIFSN ECW_MAX ECW_MIN TX_OP]
+             [AC_BK AIFSN ECW_MAX ECW_MIN TX_OP]
+             [AC_VI AIFSN ECW_MAX ECW_MIN TX_OP]
+             [AC_VO AIFSN ECW_MAX ECW_MIN TX_OP]
+sys_cfg_ap_wmm [0]
+               [AC_BE AIFSN ECW_MAX ECW_MIN TX_OP]
+               [AC_BK AIFSN ECW_MAX ECW_MIN TX_OP]
+               [AC_VI AIFSN ECW_MAX ECW_MIN TX_OP]
+               [AC_VO AIFSN ECW_MAX ECW_MIN TX_OP]
+sys_cfg_11n [ENABLE] [HTCAP] [AMPDU] [TXBFCAP] [HT_MCS_MAP]
+addbapara [timeout txwinsize rxwinsize txamsdu rxamsdu]
+aggrpriotbl <m0> <n0> <m1> <n1> ... <m7> <n7>
+addbareject <m0> <m1> ... <m7>
+httxbfcfg <ACTION> [ACT_DATA]
+httxcfg [<m>] [<n>]
+htstreamcfg [n]
+deepsleep [MODE] [IDLE_TIME]
+sdcmd52rw <FN no.> <address> [data]
+hostcmd <txpwrlimit_cfg.conf> txpwrlimit_cfg_get
+hostcmd <txpwrlimit_cfg.conf> txpwrlimit_2g_cfg_set
+hostcmd <txpwrlimit_cfg.conf> txpwrlimit_5g_cfg_set
+tx_data_pause [ENABLE][TX_BUF_CNT]
+vhtcfg <j> <k> [l] [m] [n] [o]
+dfstesting [<user_cac_pd> <user_nop_pd> <no_chan_change> <fixed_chan_num>]
+cscount [<channel_switch_count>]
+mgmtframectrl [MASK]
+
+-------------------------------------------------------------------
+The following commands can be issued individually for debug purpose
+-------------------------------------------------------------------
+sys_cfg_ap_mac_address [AP_MAC_ADDRESS]
+sys_cfg_ssid [SSID]
+sys_cfg_beacon_period [BEACON_PERIOD]
+sys_cfg_dtim_period [DTIM_PERIOD]
+sys_cfg_channel [CHANNEL] [MODE]
+sys_cfg_channel_ext [CHANNEL] [BAND] [MODE]
+sys_cfg_scan_channels [CHANNEL[.BAND]]
+sys_cfg_rates [RATES]
+sys_cfg_rates_ext [rates RATES] [mbrate RATE]
+sys_cfg_tx_power [TX_POWER]
+sys_cfg_bcast_ssid_ctl [0|1|2]
+sys_cfg_preamble_ctl
+sys_cfg_bss_status
+sys_cfg_rts_threshold [RTS_THRESHOLD]
+sys_cfg_frag_threshold [FRAG_THRESHOLD]
+sys_cfg_rsn_replay_prot [1|0]
+sys_cfg_tx_beacon_rate [TX_BEACON_RATE]
+sys_cfg_mcbc_data_rate [MCBC_DATA_RATE]
+sys_cfg_pkt_fwd_ctl [PKT_FWD_CTRL]
+sys_cfg_sta_ageout_timer [STA_AGEOUT_TIMER]
+sys_cfg_ps_sta_ageout_timer [PS_STA_AGEOUT_TIMER]
+sys_cfg_auth [AUTH_MODE]
+sys_cfg_protocol [PROTOCOL] [AKM_SUITE]
+sys_cfg_pmf [MFPC] [MFPR]
+sys_cfg_wep_key [INDEX ISDEFAULT KEY]
+sys_cfg_cipher [PAIRWISE_CIPHER GROUP_CIPHER]
+sys_cfg_pwk_cipher [<PROTOCOL>] [PAIRWISE_CIPHER]
+sys_cfg_gwk_cipher [GROUP_CIPHER]
+sys_cfg_group_rekey_timer [GROUP_REKEY_TIMER]
+sys_cfg_wpa_passphrase [PASSPHRASE]
+sys_cfg_max_sta_num [STA_NUM]
+sys_cfg_retry_limit [RETRY_LIMIT]
+sys_cfg_sticky_tim_config [ENABLE] [<DURATION> <STICKY_BIT_MASK>]
+sys_cfg_sticky_tim_sta_mac_addr [CONTROL] [STA_MAC_ADDRESS]
+sys_cfg_2040_coex [ENABLE]
+sys_cfg_eapol_pwk_hsk [<TIMEOUT> <RETRIES>]
+sys_cfg_eapol_gwk_hsk [<TIMEOUT> <RETRIES>]
+sta_filter_table <FILTERMODE> <MACADDRESS_LIST>
+regrdwr <TYPE> <OFFSET> [value]
+memaccess <ADDR> [value]
+rdeeprom <offset> <byteCount>
+cfg_data <type> [*.conf]
+sys_cfg_80211d [state STATE] [country COUNTRY]
+uap_stats
+sys_cfg_tdls_ext_cap [CONFIG_FILE]
+sys_cfg_restrict_client_mode [<ENABLE> [MODE_CONFIG]]
+
+-------------------
+Details of Commands
+-------------------
+
+version
+-------
+    "./uaputl.exe -v"
+
+    This command prints the uAP utility version information.
+
+debug_level
+-----------
+    "./uaputl.exe -d <debug_level>"
+
+    The supported debug_level are:
+        0     - no debug
+        1     - enable MSG_DEBUG
+        2     - enable all the debug
+    This command use to control the debug level of uaputl.exe.
+
+    Example:
+	./uaputl.exe -d 2 sys_config
+		Enable all the debug in uaputl.exe
+
+sys_config
+----------
+    "./uaputl.exe sys_config [CONFIG_FILE]"
+    This command is used to set or get the current settings of the Micro AP.
+
+    The supported options are:
+        CONFIG_FILE is file contain all the Micro AP settings.
+        empty - Get current Micro AP settings
+
+    Example:
+	./uaputl.exe sys_config
+		Get current settings of the Micro AP.
+
+	./uaputl.exe sys_config config/uaputl.conf
+		Load Micro AP's settings from uaputl.conf file and set.
+
+bss_config
+----------
+    "./uaputl.exe bss_config [CONFIG_FILE]"
+    This command is used to set or get the current settings of the BSS.
+
+    The supported options are:
+        CONFIG_FILE is file contain all the BSS settings.
+        empty - Get current BSS settings
+
+    Example:
+	./uaputl.exe bss_config
+		Get current settings of the BSS.
+
+	./uaputl.exe bss_config config/uaputl.conf
+		Load BSS settings from uaputl.conf file and set.
+
+sys_info
+--------
+    "./uaputl.exe sys_info"
+
+    This command returns system information such as firmware version number
+    and HW information.
+
+sys_reset
+---------
+    "./uaputl.exe sys_reset"
+
+    This command is used to reset the Micro AP back to its initial state.
+    For example, this can be used to recover from a serious error, or before
+    creating a new BSS.
+
+    This command has the following effects:
+        1. The WLAN hardware MAC is reset.
+        2. All MIB variables are initialized to their respective default
+           values.
+        3. The firmware internal variables are reset to their respective
+           default values.
+        4. The firmware state machines are reset to their respective initial
+           states.
+
+bss_start
+---------
+    "./uaputl.exe bss_start"
+
+    This command starts the BSS.
+    There is no error for redundant bss_start command.
+
+bss_stop
+--------
+    "./uaputl.exe bss_stop"
+
+    This command stops the BSS. The command causes the firmware to:
+        1. Deauthenticate all associated client stations.
+        2. Turn off the radio (hence stopping beaconing).
+    There is no error for redundant bss_stop command.
+
+sta_list
+--------
+    "./uaputl.exe sta_list"
+
+    This command returns the list of client stations that are currently
+    associated with the AP.
+
+    The output is formatted as shown below, for each STA:
+    "STA <STA_NUM> information:
+     ==========================
+     MAC Address: <STA MAC address>
+     Power mfg status: active|power save
+     Rssi:  <RSSI_VALUE>"
+
+sta_deauth
+----------
+    "./uaputl.exe sta_deauth <STA_MAC_ADDRESS>"
+
+    This command is used to de-authentciate a client station for any reason.
+
+radioctrl
+----------
+    "./uaputl.exe radioctrl [0|1]"
+
+    This command is used to set or get the radio settings.
+    The supported options are:
+        1     - Turn radio on
+        0     - Turn radio off
+        empty - Get current radio setting
+
+txratecfg
+----------
+    "./uaputl.exe txratecfg [l] [m] [n]"
+
+    This command is used to set/get the transmit data rate.
+
+    Where
+        [l] is <format>
+        <format> - This parameter specifies the data rate format used in this command
+            0:    LG
+            1:    HT
+            2:    VHT
+            0xff: Auto
+
+        [m] is <index>
+        <index> - This parameter specifies the rate or MCS index
+        If <format> is 0 (LG),
+            0    1 Mbps
+            1    2 Mbps
+            2    5.5 Mbps
+            3    11 Mbps
+            4    6 Mbps
+            5    9 Mbps
+            6    12 Mbps
+            7    18 Mbps
+            8    24 Mbps
+            9    36 Mbps
+            10   48 Mbps
+            11   54 Mbps
+        If <format> is 1 (HT),
+            0    MCS0
+            1    MCS1
+            2    MCS2
+            3    MCS3
+            4    MCS4
+            5    MCS5
+            6    MCS6
+            7    MCS7
+            8    MCS8
+            9    MCS9
+            10   MCS10
+            11   MCS11
+            12   MCS12
+            13   MCS13
+            14   MCS14
+            15   MCS15
+            32   MCS32
+        If <format> is 2 (VHT),
+            0    MCS0
+            1    MCS1
+            2    MCS2
+            3    MCS3
+            4    MCS4
+            5    MCS5
+            6    MCS6
+            7    MCS7
+            8    MCS8
+            9    MCS9
+        [n] is <nss>
+        <nss> - This parameter specifies the NSS. It is valid only for VHT
+        If <format> is 2 (VHT),
+            1    NSS1
+            2    NSS2
+
+    Examples:
+        ./uaputl.exe txratecfg 0 3        : Set fixed Tx rate to 11 Mbps
+        ./uaputl.exe txratecfg 0 11       : Set fixed Tx rate to 54 Mbps
+        ./uaputl.exe txratecfg 1 3        : Set fixed Tx rate to MCS3
+        ./uaputl.exe txratecfg 2 3 2    : Set fixed Tx rate to MCS3 for NSS2
+        ./uaputl.exe txratecfg 0xff     : Disable fixed rate and uses auto rate
+        ./uaputl.exe txratecfg          : Read the current data rate setting
+
+antcfg
+----------
+    "./uaputl.exe antcfg [m] [n]"
+
+    This command is used to set/get the transmit and receive antenna.
+    where value of m is:
+        Bit 0   -- Tx Path A
+        Bit 1   -- Tx Path B
+        Bit 0-1 -- Tx Path A+B
+
+    where value of n is:
+        Bit 0   -- Rx Path A
+        Bit 1   -- Rx Path B
+        Bit 0-1 -- Rx Path A+B
+    The Tx path setting (m) is used if Rx path (n) is not provided.
+
+    Examples:
+        ./uaputl.exe antcfg             : Get Tx and Rx path
+        ./uaputl.exe antcfg 3           : Set Tx and Rx path to A+B
+        ./uaputl.exe antcfg 2 3         : Set Tx path to B and Rx path to A+B
+
+sys_cfg_ap_mac_address
+----------------------
+    "./uaputl.exe sys_cfg_ap_mac_address [AP_MAC_ADDRESS]"
+
+    This command is used to set or get the AP MAC address.
+
+    If no arguments are given, this command returns the current AP MAC
+    address.
+    Otherwise, this MAC address becomes the BSSID of the infrastructure
+    network created by the AP.
+
+    Example:
+	./uaputl.exe sys_cfg_ap_mac_address 00:50:43:20:aa:bb
+		Set AP MAC address to 00:50:43:20:aa:bb
+
+	./uaputl.exe sys_cfg_ap_mac_address
+		Get AP MAC address"
+
+sys_cfg_ssid
+------------
+    "./uaputl.exe sys_cfg_ssid [SSID]"
+
+    This command is used to set or get the AP SSID.
+
+    If no arguments are given, this command returns the current AP SSID.
+    While setting, the maximum length of the SSID can be 32 characters.
+
+    Example:
+	./uaputl.exe sys_cfg_ssid microap
+		Set AP ssid to "microap"
+
+	./uaputl.exe sys_cfg_ssid
+		Get AP ssid
+
+sys_cfg_beacon_period
+---------------------
+    "./uaputl.exe sys_cfg_beacon_period [BEACON_PERIOD]"
+
+    This command is used to set or get the AP beacon period.
+
+    If no arguments are given, this command returns the current AP beacon
+    period.
+
+    Beacon period is represented in milliseconds.
+
+    Example:
+	./uaputl.exe sys_cfg_beacon_period 100
+		Set AP beacon period to 100 TU
+
+	./uaputl.exe sys_cfg_beacon_period
+		Get AP beacon period
+
+sys_cfg_dtim_period
+-------------------
+    "./uaputl.exe sys_cfg_dtim_period [DTIM_PERIOD]
+
+    This command is used to set or get the AP DTIM period.
+
+    If no arguments are given, this command returns the current AP DTIM
+    period.
+
+    Example:
+	./uaputl.exe sys_cfg_dtim_period 3
+		Set AP DTIM period to 3
+
+	./uaputl.exe sys_cfg_dtim_period
+		Get AP DTIM period
+
+sys_cfg_scan_channels
+---------------------
+    "./uaputl.exe sys_cfg_scan_channels [CHANNEL[.BAND]]"
+
+    This command is used to set or get the AP's scan channel list.
+
+    If no arguments are given, this command returns the scan channel list.
+    If BAND is 0, channel is set in 2.4 GHz band and if BAND is 1, channel is set to 5GHz.
+    Channels from only one of the bands should be specified.
+    Each CHANNEL.BAND pair must be separated by a space. BAND parameter is optional.
+
+    Example:
+	./uaputl.exe sys_cfg_scan_channels 1 11 6
+		Set AP scan channel list to 1 11 6
+
+	./uaputl.exe sys_cfg_scan_channels 11.0 6.0
+		Set AP scan channel list to 11 6
+
+	./uaputl.exe sys_cfg_scan_channels
+		Get AP scan channel list
+
+        ./uaputl.exe sys_cfg_scan_channels 8.1 16.1 34
+                Set AP scan channel list to 8 16 and 34 in 5GHz band.
+
+sys_cfg_channel
+---------------
+    "./uaputl.exe sys_cfg_channel [CHANNEL] [MODE]"
+
+    This command is used to set or get the AP radio channel.
+
+    If no arguments are given, this command returns the current AP radio
+    channel.
+
+    MODE: band config mode.
+          Bit 0:  automatic channel selection (ACS) enable/disable
+          Bit 1:  secondary channel is above primary channel enable/disable(only allow for channel 1-7)
+          Bit 2:  secondary channel is below primary channel enable/disable(only allow for channel 5-11)
+          For 'a' band channel:
+          Bit 1:  secondary channel is above primary channel enable/disable
+          Bit 2:  secondary channel is below primary channel enable/disable
+          Only following pairs of channels are valid for secondary channel setting in 5GHz band.
+          36, 40
+          44, 48
+          52, 56
+          60, 64
+          100, 104
+          108, 112
+          116, 120
+          124, 128
+          132, 136
+          149, 153
+          157, 161
+
+    Example:
+        ./uaputl.exe sys_cfg_channel 6
+                Set AP radio channel to 6, and no secondary channel.
+
+        ./uaputl.exe sys_cfg_channel 11 0
+                Set AP radio channel to 11 with Manual Channel Select.
+
+        ./uaputl.exe sys_cfg_channel 0 1
+                Set AP to ACS.
+
+        ./uaputl.exe sys_cfg_channel
+                Get AP radio channel
+
+        ./uaputl.exe sys_cfg_channel 6 2
+                Set AP primary radio channel to 6, and secondary channel is above.
+        ./uaputl.exe sys_cfg_channel 6 4
+                Set AP primary radio channel to 6, and secondary channel is below
+        ./uaputl.exe sys_cfg_channel 0 3
+                Set AP to ACS mode, and secondary channel is above.
+        ./uaputl.exe sys_cfg_channel 0 5
+                Set AP to ACS mode, and secondary channel is below.
+        ./uaputl.exe sys_cfg_channel 36 2
+                Set AP primary radio channel to 36, and secondary channel is above.
+        ./uaputl.exe sys_cfg_channel 40 4
+                Set AP primary radio channel to 40, and secondary channel is below.
+
+sys_cfg_channel_ext
+---------------
+    "./uaputl.exe sys_cfg_channel_ext [CHANNEL] [BAND] [MODE]"
+
+    This command is used to set or get the AP radio channel.
+
+    If no arguments are given, this command returns the current AP radio
+    channel.
+
+    BAND: 0 : 2.4GHz operation
+          1 : 5GHz operation
+    MODE: band config mode.
+          Bit 0:  automatic channel selection (ACS) enable/disable
+          Bit 1:  secondary channel is above primary channel enable/disable(only allow for channel 1-7)
+          Bit 2:  secondary channel is below primary channel enable/disable(only allow for channel 5-11)
+          For 'a' band channel:
+          Bit 1:  secondary channel is above primary channel enable/disable
+          Bit 2:  secondary channel is below primary channel enable/disable
+          Only following pairs of channels are valid for secondary channel setting in 5GHz band.
+          36, 40
+          44, 48
+          52, 56
+          60, 64
+          100, 104
+          108, 112
+          116, 120
+          124, 128
+          132, 136
+          149, 153
+          157, 161
+
+    Example:
+        ./uaputl.exe sys_cfg_channel_ext 6
+Set AP radio channel to 6, and no secondary channel.
+
+        ./uaputl.exe sys_cfg_channel_ext 11 0 0
+                Set AP radio channel to 11 in 2.4GHz band with Manual Channel Select.
+
+        ./uaputl.exe sys_cfg_channel_ext 0 0 1
+                Set AP to ACS mode and 2.4GHz band.
+
+        ./uaputl.exe sys_cfg_channel_ext 8 0
+                Set AP to channel 8 and 2.4GHz band.
+
+        ./uaputl.exe sys_cfg_channel_ext 8 1
+                Set AP to channel 8 and 5GHz band.
+
+        ./uaputl.exe sys_cfg_channel_ext 36 1
+                Set AP to channel 36 and 5GHZ band.
+
+        ./uaputl.exe sys_cfg_channel_ext
+                Get AP radio channel, band and mode.
+
+        ./uaputl.exe sys_cfg_channel_ext 6 0 2
+                Set AP primary radio channel to 6, band to 2.4GHz and secondary channel is above.
+        ./uaputl.exe sys_cfg_channel_ext 6 0 4
+                Set AP primary radio channel to 6, band to 2.4GHz and secondary channel is below
+        ./uaputl.exe sys_cfg_channel_ext 0 0 3
+                Set AP to ACS mode, band to 2.4GHz and secondary channel is above.
+        ./uaputl.exe sys_cfg_channel_ext 0 0 5
+                Set AP to ACS mode, band to 2.4GHz and secondary channel is below.
+        ./uaputl.exe sys_cfg_channel_ext 36 1 2
+                Set AP primary radio channel to 36, band to 5GHz and secondary channel is above.
+        ./uaputl.exe sys_cfg_channel_ext 40 1 4
+                Set AP primary radio channel to 40, band to 5GHz and secondary channel is below.
+
+sys_cfg_rates
+-------------
+    "./uaputl.exe sys_cfg_rates [RATES]"
+
+    If 'Rate' provided, a 'set' is performed else a 'get' is performed
+    RATES is provided as a set of data rates, in unit of 500 kilobits
+    A rate with MSB bit is basic rate, i.e 0x82 is basic rate.
+
+    'set' will not allowed after bss start.
+
+    Valid rates: 2, 4, 11, 22, 12, 18, 24, 36, 48, 72, 96, 108
+    Non-Basic rates: 0x02, 0x04, 0x0b, 0x16, 0x0C, 0x12, 0x18, 0x24, 0x30, 0x48, 0x60, 0x6c
+    Basic rates: 0x82, 0x84, 0x8b, 0x96, 0x8C, 0x92, 0x98, 0xA4, 0xB0, 0xC8, 0xE0, 0xEc
+
+    Each rate must be separated by a space.
+
+    Example:
+    ./uaputl.exe sys_cfg_rates 0x82 0x84 0x96 0x0c 0x12 0x18
+    ./uaputl.exe sys_cfg_rates
+
+sys_cfg_rates_ext
+-----------------
+    "./uaputl.exe sys_cfg_rates_ext [rates RATES] [mbrate RATE]"
+
+    If 'Rate' provided, a 'set' is performed else a 'get' is performed.
+    RATES is provided as a set of data rates, in unit of 500 kilobits
+    A rate with MSB bit is basic rate, i.e 0x82 is basic rate.
+    If only operational rates is provided, MCBC rate and unicast rate will be set to auto.
+
+    Valid rates: 2, 4, 11, 22, 12, 18, 24, 36, 48, 72, 96, 108
+    Non-Basic rates: 0x02, 0x04, 0x0b, 0x16, 0x0C, 0x12, 0x18, 0x24, 0x30, 0x48, 0x60, 0x6c
+    Basic rates: 0x82, 0x84, 0x8b, 0x96, 0x8C, 0x92, 0x98, 0xA4, 0xB0, 0xC8, 0xE0, 0xEc
+    Rates 2, 4, 11 and 22 (in units of 500 Kbps) must be present in either of
+    basic or non-basic rates. If OFDM rates are enabled then 12, 24 and 48 (in
+    units of 500 Kbps) must be present in either basic or non-basic rates.
+
+    Each rate must be separated by a space.
+
+    rates followed by RATES for setting operational rates.
+    mbrate followed by RATE for setting multicast and broadcast rate.
+
+    operational rates only allow to set before bss start.
+
+    Example:
+    ./uaputl.exe sys_cfg_rates_ext rates 0x82 0x04 11 0x96 12 24 48 mbrate 0x16
+        Set AP operation rates to 0x82,0x04,11,0x96,12,24,48, multicast rate to 0x16
+    ./uaputl.exe sys_cfg_rates_ext rates 0x82 0x04 11 0x96 12 24 48
+		Set AP operation rates to 0x82,0x04,11,0x96,12,24,48.
+
+sys_cfg_tx_power
+----------------
+    "./uaputl.exe sys_cfg_tx_power [TX_POWER]"
+
+    This command is used to set or get the AP Tx power.
+
+    If no arguments are given, this command returns the current AP Tx power.
+
+    Tx power level is represented in dBm.
+
+    Example:
+	./uaputl.exe sys_cfg_tx_power 13
+		Set AP Tx power to 13 dBm
+
+	./uaputl.exe sys_cfg_tx_power
+		Get AP Tx power
+
+sys_cfg_bcast_ssid_ctl
+----------------------
+    "./uaputl.exe sys_cfg_bcast_ssid_ctl [0|1|2]"
+
+    This command is used to set or get the SSID broadcast feature setting.
+
+    The supported options are:
+        0     - Disable SSID broadcast, send empty SSID (length=0) in beacon.
+        1     - Enable SSID broadcast
+        2     - Disable SSID broadcast, clear SSID (ACSII 0) in beacon, but keep the original length
+        empty - Get current SSID broadcast setting
+
+    When broadcast SSID is enabled, the AP responds to probe requests from
+    client stations that contain null SSID.
+
+    When broadcast SSID is disabled (sys_cfg_bcast_ssid_ctl = 0/2), the AP:
+        1. Does not respond to probe requests that contain null SSID.
+        2. when sys_cfg_bcast_ssid_ctl = 0, generates beacons that contain null SSID (length=0).
+        3. when sys_cfg_bcast_ssid_ctl = 2, clear SSID (ACSII 0) in beacon and keep the original length
+
+   Example:
+        ./uaputl.exe sys_cfg_bcast_ssid_ctl 0
+                Disable SSID broadcast, send empty SSID (length=0) in beacon.
+
+	./uaputl.exe sys_cfg_bcast_ssid_ctl 1
+		Enable SSID broadcast
+
+        ./uaputl.exe sys_cfg_bcast_ssid_ctl 2
+                Disable SSID broadcast, clear SSID (ACSII 0) in beacon, but keep the original length
+
+	./uaputl.exe sys_cfg_bcast_ssid_ctl
+		Get SSID broadcast setting
+
+sys_cfg_preamble_ctl
+--------------------
+    "./uaputl.exe sys_cfg_preamble_ctl"
+
+    This command is used to get type of preamble.
+
+    Example:
+	./uaputl.exe sys_cfg_preamble_ctl
+		Get AP preamble setting
+
+sys_cfg_bss_status
+--------------------
+    "./uaputl.exe sys_cfg_bss_status"
+
+    This command is used to get current BSS status.
+
+    Example:
+	./uaputl.exe sys_cfg_bss_status
+		Get current BSS status
+
+sys_cfg_rts_threshold
+---------------------
+    "./uaputl.exe sys_cfg_rts_threshold [RTS_THRESHOLD]"
+
+    This command is used to set or get the RTS threshold value.
+
+    If no arguments are given, this command returns the current RTS threshold
+    value.
+
+    Example:
+	./uaputl.exe sys_cfg_rts_threshold 2347
+		Set AP RTS threshold to 2347
+
+	./uaputl.exe sys_cfg_rts_threshold
+		Get AP RTS threshold
+
+sys_cfg_frag_threshold
+----------------------
+    "./uaputl.exe sys_cfg_frag_threshold [FRAG_THRESHOLD]"
+
+    This command is used to set or get the Fragmentation threshold value.
+
+    If no arguments are given, this command returns the current Fragmentation threshold
+    value.
+
+    Example:
+	./uaputl.exe sys_cfg_frag_threshold 2346
+		Set AP Fragmentation threshold to 2346
+
+	./uaputl.exe sys_cfg_frag_threshold
+		Get AP Fragmentation threshold
+
+    Note: Please use aggrpriotbl command to disable the AMPDU/AMSDU aggregation when frag_threshold is set.
+
+sys_cfg_rsn_replay_prot
+-----------------------
+    "./uaputl.exe sys_cfg_rsn_replay_prot [1|0]"
+
+    This command is used to enable or disable RSN replay protection.
+
+    The supported options are:
+        0     - Disable RSN replay protection
+        1     - Enable RSN replay protection
+        empty - Get current RSN replay protection setting
+
+   Example:
+	./uaputl.exe sys_cfg_rsn_replay_prot 1
+		Enable RSN replay protection
+
+	./uaputl.exe sys_cfg_rsn_replay_prot
+		Get RSN replay protection setting
+
+sys_cfg_tx_beacon_rate
+--------------------
+    "./uaputl.exe sys_cfg_tx_beacon_rate [TX_BEACON_RATE]"
+
+    This command is used to set or get the Tx beacon rate settings.
+
+    The supported options are:
+        0     - Auto rate
+        >0    - Set specified beacon rate
+        empty - Get current beacon rate
+
+    Tx beacon rate is represented in units of 500 kbps. While setting Tx beacon
+    rates, only zero or rates currently configured are allowed.
+
+	Following is the list of supported rates in units of 500 Kbps:
+	    2,    4,    11,   22,   12,   18,   24,   36,   48,   72,   96,   108
+	    0x02, 0x04, 0x0b, 0x16, 0x0C, 0x12, 0x18, 0x24, 0x30, 0x48, 0x60, 0x6c
+
+    Example:
+	./uaputl.exe sys_cfg_tx_beacon_rate 0x04
+		Set AP Tx beacon rate to 2 M
+
+   	./uaputl.exe sys_cfg_tx_beacon_rate 4
+		Set AP Tx data beacon to 2 M
+
+	./uaputl.exe sys_cfg_tx_beacon_rate
+		Get AP Tx beacon rate
+
+sys_cfg_mcbc_data_rate
+----------------------
+    "./uaputl.exe sys_cfg_mcbc_data_rate [MCBC_DATA_RATE]"
+
+    This command is used to set or get the MCBC data rate to use for multicast
+    or broadcast packet transmission.
+
+    The supported options are:
+        0     - Auto rate
+        >0    - Set specified MCBC data rate
+        empty - Get current MCBC data rate
+
+    MCBC data rate is represented in units of 500 kbps. While setting MCBC data
+    rates, only zero or one of rates currently configured as basic rates are allowed.
+
+    For example:  If current basic rates is "0x82 0x84 0x8b 0x96", then the allowed
+                  values for MCBC data rate will be "0x2 0x4 0xb 0x16".
+
+    Example:
+	./uaputl.exe sys_cfg_mcbc_data_rate 22
+		Set AP MCBC data rate to 11 M
+
+   	./uaputl.exe sys_cfg_mcbc_data_rate 0
+		Set AP MCBC data rate to auto
+
+	./uaputl.exe sys_cfg_mcbc_data_rate
+		Get AP MCBC data rate
+
+sys_cfg_pkt_fwd_ctl
+-------------------
+    "./uaputl.exe sys_cfg_pkt_fwd_ctl [PKT_FWD_CTRL]"
+
+    This command is used to set or get the packet forwarding control
+    settings.
+
+    where PKT_FWD_CTRL is:
+        bit 0 -- Packet forwarding handled by Host (0) or Firmware (1)
+        bit 1 -- Intra-BSS broadcast packets are allowed (0) or denied (1)
+        bit 2 -- Intra-BSS unicast packets are allowed (0) or denied (1)
+        bit 3 -- Inter-BSS unicast packets are allowed (0) or denied (1)
+        empty - Get current packet forwarding setting
+
+    Example:
+	./uaputl.exe sys_cfg_pkt_fwd_ctl 1
+		Set AP packet forwarding control in firmware to allow all packets
+
+	./uaputl.exe sys_cfg_pkt_fwd_ctl 6
+		Set AP packet forwarding control in Host, only allow Inter-BSS unicast packets forwarding.
+
+	./uaputl.exe sys_cfg_pkt_fwd_ctl 8
+		Set AP packet forwarding control in Host, only allow Intra-BSS packets forwarding.
+
+	./uaputl.exe sys_cfg_pkt_fwd_ctl 0
+		Set AP packet forwarding control in Host, allow Intra-BSS packets and
+	            Inter-BSS unicast packets forwarding.
+
+	./uaputl.exe sys_cfg_pkt_fwd_ctl
+		Get AP packet forwarding control
+
+sys_cfg_sta_ageout_timer
+------------------------
+    "./uaputl.exe sys_cfg_sta_ageout_timer [STA_AGEOUT_TIMER]"
+
+    This command is used to set or get the STA ageout value.
+
+    Value of 0 will mean that stations will never be aged out.
+
+    Minimum value for this is 100. Maximum allowed setting should be 864000.
+
+    If no arguments are given, this command returns the current STA ageout
+    value.
+
+    Ageout timer value is represented in units of 100 ms.
+
+    Example:
+	./uaputl.exe sys_cfg_sta_ageout_timer 1800
+		Set AP STA ageout time to 180000 ms
+
+	./uaputl.exe sys_cfg_sta_ageout_timer
+		Get AP STA ageout time
+
+sys_cfg_ps_sta_ageout_timer
+---------------------------
+	"./uaputl.exe sys_cfg_ps_sta_ageout_timer [PS_STA_AGEOUT_TIMER]"
+
+	This command is used to set or get the PS STA ageout value.
+
+	Value of 0 will mean that stations will never be aged out.
+
+	Minimum value for this is 100. Maximum allowed setting should be 864000.
+
+	If no arguments are given, this command returns the current	PS STA ageout
+	value.
+
+	Ageout timer value is represented in units of 100 ms.
+
+	Example:
+	./uaputl.exe sys_cfg_ps_sta_ageout_timer 1800
+		Set AP PS STA ageout time to 180000 ms
+
+	./uaputl.exe sys_cfg_ps_sta_ageout_timer
+		Get AP PS STA ageout time
+
+sys_cfg_auth
+------------
+    "./uaputl.exe sys_cfg_auth [AUTHMODE]"
+
+    This command is used to set or get the AP authentication mode.
+
+    The supported options are:
+        AUTHMODE :     0 - Open authentication
+                       1 - Shared key authentication
+                       255 - Auto (Open and Shared key) authentication
+    empty - Get current authentication mode
+
+    Example:
+	./uaputl.exe sys_cfg_auth 0
+		Set AP authentication mode to Open.
+
+	./uaputl.exe sys_cfg_auth
+		Get AP authentication mode.
+
+sys_cfg_protocol
+----------------
+    "./uaputl.exe sys_cfg_protocol [PROTOCOL] [AKM_SUITE]"
+
+    This command is used to set or get the encryption protocol.
+
+    The supported options are:
+	PROTOCOL:
+			1		 No RSN
+			2		WEP Static
+			8		  WPA
+			32		  WPA2
+			40		 WPA, WPA2 Mixed Mode
+    empty - Get current encryption protocol
+
+    AKM_SUITE:
+            bit 0   KEY_MGMT_EAP
+            bit 1   KEY_MGMT_PSK
+            bit 2   KEY_MGMT_NONE
+            bit 3   KEY_MGMT_PSK_SHA256
+
+    Example:
+	./uaputl.exe sys_cfg_protocol 2
+		Set AP encryption protocol to static WEP.
+
+	./uaputl.exe sys_cfg_protocol
+		Get AP encryption protocol.
+
+    ./uaputl.exe sys_cfg_protocol 32 0x102
+        Set AP encryption protocol to WPA2 and AKM SUITE to PSK and PSK SHA256
+
+    ./uaputl.exe sys_cfg_protocol 40 0x100
+        Set AP encryption protocol to WPA+WPA2 and AKM SUITE to PSK SHA256
+
+sys_cfg_pmf
+-----------
+    "./uaputl.exe sys_cfg_pmf [MFPC] [MFPR]"
+
+    This command is used to set or get the PMF settings.
+
+    The supported options are:
+        MFPC:       0 - Mgmt frame protection not capable
+                    1 - Mgmt frame protection capable
+
+        MFPR:       0 - Mgmt frame protection not required
+                    1 - Mgmt frame protection required
+                    x - don't care if MFPC = 0
+
+    Example:
+    ./uaputl.exe sys_cfg_pmf 1 1
+        Set AP's PMF params to Mgmt frames protection capable and required.
+
+    ./uaputl.exe sys_cfg_pmf
+        Get AP's PMF params settings.
+
+sys_cfg_wep_key
+---------------
+    "./uaputl.exe sys_cfg_wep_key [INDEX ISDEFAULT Key_0]
+                                  [INDEX ISDEFAULT Key_1]
+                                  [INDEX ISDEFAULT Key_2]
+                                  [INDEX ISDEFAULT Key_3]
+                                  [INDEX]"
+
+    This command is used to set or get the WEP key settings.
+
+    The supported options are:
+        INDEX:       0 - KeyIndex is 0
+                     1 - KeyIndex is 1
+                     2 - KeyIndex is 2
+                     3 - KeyIndex is 3
+	ISDEFAULT:   0: KeyIndex is not the default
+		     1: KeyIndex is the default transmit key
+
+        KEY_* :      Key value.
+        empty - Get current WEP key settings for all the keys
+        INDEX - Only INDEX will get the key setting for the particular
+                KeyIndex.
+
+    Example:
+	./uaputl.exe sys_cfg_wep_key 0 1 55555
+		Set AP's default transmit key to "55555", key index is 0.
+
+    ./uaputl.exe sys_cfg_wep_key 0 1 12345678901234567890123456
+        Set AP's default transmit key to "12345678901234567890123456", key index is 0.
+
+	./uaputl.exe sys_cfg_wep_key
+		Get AP all the WEP keys settings.
+
+	./uaputl.exe sys_cfg_wep_key 1
+		Get WEP key setting for the KeyIndex = 1.
+
+sys_cfg_cipher
+--------------
+    "./uaputl.exe sys_cfg_cipher [PAIRWISE_CIPHER GROUP_CIPHER]"
+
+    This command is used to set or get the key types for the pairwise and group key.
+
+    The supported options are:
+	PAIRWISE_CIPHER:
+			0		  None
+			4		  TKIP
+			8		 AES CCMP
+			12		 AES CCMP + TKIP
+        GROUP_CIPHER:
+			0		  None
+			4		  TKIP
+			8		 AES CCMP
+    	empty - Get current key types
+
+	Valid combinations of [PAIRWISE_CIPHER GROUP_CIPHER] are:
+		[0 0], [4 4], [8 8], [12 4].
+
+    Example:
+	./uaputl.exe sys_cfg_cipher 4 4
+		Set AP's pairwise and group key's type to TKIP.
+
+	./uaputl.exe sys_cfg_cipher
+		Get AP's key types for the pairwise and group key.
+
+sys_cfg_pwk_cipher
+------------------
+    "./uaputl.exe sys_cfg_pwk_cipher [<PROTOCOL>] [PAIRWISE_CIPHER]"
+
+    This command is used to set or get protocol and corresponding pairwise cipher settings.
+
+    The supported options are:
+        PROTOCOL:
+                        0                None
+                        8                 WPA
+                        32                WPA2
+        PAIRWISE_CIPHER:
+                        0                 None
+                        4                 TKIP
+                        8                AES CCMP
+                        12               AES CCMP + TKIP
+        WPA/TKIP cipher cannot be used when uAP operates in 802.11n mode.
+        If only PROTOCOL is provided, pairwise cipher for that protocol is displayed.
+        empty - Get protocol and corresponding pairwise cipher settings.
+
+    Example:
+        ./uaputl.exe sys_cfg_pwk_cipher 8 4
+                Set AP's pairwise cipher to TKIP for WPA protocol.
+
+        ./uaputl.exe sys_cfg_pwk_cipher 32
+                Get AP's pairwise cipher for WPA2 protocol.
+
+        ./uaputl.exe sys_cfg_pwk_cipher
+                Get AP's protocol and corresponding pairwise cipher settings.
+
+sys_cfg_gwk_cipher
+------------------
+    "./uaputl.exe sys_cfg_gwk_cipher [GROUP_CIPHER]"
+
+    This command is used to set or get group cipher.
+
+    The supported options are:
+        GROUP_CIPHER:
+                        0                 None
+                        4                 TKIP
+                        8                AES CCMP
+        empty - Get group cipher settings.
+
+    Example:
+        ./uaputl.exe sys_cfg_gwk_cipher 8
+                Set AP's group cipher to AES CCMP.
+
+        ./uaputl.exe sys_cfg_gwk_cipher
+                Get AP's group cipher settings.
+
+sys_cfg_group_rekey_timer
+-------------------------
+    "./uaputl.exe sys_cfg_group_rekey_timer [GROUP_REKEY_TIMER]"
+
+    This command is used to set or get the AP group re-key time interval, in seconds.
+
+    The supported options are:
+        GROUP_REKEY_TIMER is represented in seconds. This is only applicable
+        		 if the protocol is WPA or WPA2. Value of 0 will disable group re-key.
+
+        empty - Get current group rekey timer
+
+    Example:
+	./uaputl.exe sys_cfg_group_rekey_timer 1800
+		Set AP's group re-key time interval to 1800 s
+
+	./uaputl.exe sys_cfg_group_rekey_timer
+		Get AP's group re-key time interval.
+
+sys_cfg_wpa_passphrase
+----------------------
+    "./uaputl.exe sys_cfg_wpa_passphrase [PASSPHRASE]"
+
+    This command is used to set or get the WPA or WPA2 passphrase.
+
+    If no arguments are given, this command returns the current WPA or WPA2
+    passphrase.
+    While setting, the maximum length of the passphrase can be 64 characters.
+
+    Example:
+	./uaputl.exe sys_cfg_wpa_passphrase 1234567890
+		Set AP's WPA or WPA2 passphrase to "1234567890"
+
+	./uaputl.exe sys_cfg_wpa_passphrase
+		Get AP's WPA or WPA2 passphrase.
+
+sys_cfg_max_sta_num
+-------------------
+    "./uaputl.exe sys_cfg_max_sta_num [STA_NUM]"
+
+    This command is used to set or get the maximum number of stations allowed to connect to uAP.
+
+    If no arguments are given, this command returns the configured maximum number of stations
+		allowed to connect to uAP and maximum number of stations supported.
+
+    Example:
+	./uaputl.exe sys_cfg_max_sta_num 2
+		Set AP's maximum station number to 2
+
+	./uaputl.exe sys_cfg_max_sta_num
+		Get AP's maximum station number configured and maximum station number supported.
+
+sys_cfg_retry_limit
+-------------------
+    "./uaputl.exe sys_cfg_retry_limit [RETRY_LIMIT]"
+
+    This command is used to set or get the retry limit to use for packet transmissions.
+
+    The maximum retry_limit allowed is 14.
+
+    If no arguments are given, this command returns the current retry limit value.
+
+    Example:
+	./uaputl.exe sys_cfg_retry_limit 2
+		Set AP's retry limit value to 2
+
+	./uaputl.exe sys_cfg_retry_limit
+		Get AP's retry limit value
+
+sys_cfg_sticky_tim_config
+-------------------------
+    "./uaputl.exe sys_cfg_sticky_tim_config [ENABLE] [<DURATION> <STICKY_BIT_MASK>]"
+
+    This command is used to set or get sticky TIM configuration.
+
+    ENABLE is used to enable or disable sticky TIM feature.
+    Following are the valid values of ENABLE
+    0- disable SticktyTIM
+    1- enable StickyTIM  (Both DURATION in beacons and STICKY_BIT_MASK must be provided)
+    2- enable StickyTIM  (enable sticky TIM without changing previous values of
+       DURATION and STICKY_BIT_MASK)
+
+    When bit 0 of STICKY_BIT_MASK is set, TIM bit is made sticky and when
+    cleared, normal TIM bit updates resume.
+    When bit 1 of STICKY_BIT_MASK is set, MoreData bit is made sticky and when
+    cleared, normal MoreData bit updates resume.
+    STICKY_BIT_MASK = 0 is NOT a valid configuration value.
+
+    If no argument is given, this command returns current sticky TIM configuration.
+
+    Example:
+    ./uaputl.exe sys_cfg_sticky_tim_config
+                Get sticky TIM configuration.
+
+    ./uaputl.exe sys_cfg_sticky_tim_config 0
+                Disable sticky TIM feature.
+
+    ./uaputl.exe sys_cfg_sticky_tim_config 1 30 1
+                Enable sticky TIM feature with DURATION of 30 beacons and
+                STICKY_BIT_MASK set to 1.
+
+sys_cfg_sticky_tim_sta_mac_addr
+-------------------------------
+    "./uaputl.exe sys_cfg_sticky_tim_sta_mac_addr [CONTROL] [STA_MAC_ADDRESS]"
+
+    This command is used to set or get sticky TIM control parameter for associated station.
+
+    CONTROL when set to 1, sticky TIM bit for that station is activated.
+    When set to 0, sticky TIM bit for that station is deactivated.
+
+    If no argument is given, it returns sticky TIM configuration for all associated stations.
+    If only STA_MAC_ADDRESS is provided, it returns sticky TIM configartion for that station.
+
+    Example:
+    ./uaputl.exe sys_cfg_sticky_tim_sta_mac_addr
+            Get sticky TIM configuration for all associated stations.
+
+    ./uaputl.exe sys_cfg_sticky_tim_sta_mac_addr 00:50:43:20:11:22
+            Get control parameter for station 00:50:43:20:11:22.
+
+    ./uaputl.exe sys_cfg_sticky_tim_sta_mac_addr 1 00:50:43:20:11:22
+            Set control parameter for station with MAC address 00:50:43:20:11:22 to 1.
+
+    Note:TIM bit for an associated STA is made sticky only if both below mentioned
+         conditions are satisfied
+         1.Enable = 1 or 2 in most recently received sys_cfg_sticky_tim_config command, and
+         2.Control = 1 in most recently received sys_cfg_sticky_tim_sta_mac_addr
+           with this station MAC address.
+
+sys_cfg_2040_coex
+-------------------------------
+    "./uaputl.exe sys_cfg_2040_coex [ENABLE]"
+
+    This command is used to set or get 20/40 BSS coexistence configuration.
+
+    ENABLE when set to 0, disables 20/40 coex.
+    When set to 1, enables 20/40 coex.
+
+    If no argument is given, it returns 20/40 BSS coex configuration.
+
+    Example:
+    ./uaputl.exe sys_cfg_2040_coex
+            Get 20/40 BSS coexistence configuration.
+
+    ./uaputl.exe sys_cfg_2040_coex 0
+            Disable 20/40 BSS coexistence.
+
+    ./uaputl.exe sys_cfg_2040_coex 1
+            Enable 20/40 BSS coexistence.
+
+    Note:20/40 BSS coex configuration can be set only before starting BSS.
+
+sys_cfg_eapol_pwk_hsk
+---------------------
+    "./uaputl.exe sys_cfg_eapol_pwk_hsk [<TIMEOUT> <RETRIES>]"
+
+	This command is used to set or get pairwise handshake update timeout and
+	number of retries.
+
+	Both TIMEOUT and number of RETRIES should be provided for a 'set'.
+
+	If no arguments are given, this command returns timeout value and number
+	of
+	retries for pairwise key.
+
+	Example:
+	./uaputl.exe sys_cfg_eapol_pwk_hsk 50 2
+		Set AP's pairwise key timeout to 50ms and number of retries to 2.
+
+	./uaputl.exe sys_cfg_eapol_pwk_hsk
+		Get AP's pairwise key timeout and number of retries.
+
+sys_cfg_eapol_gwk_hsk
+---------------------
+	"./uaputl.exe sys_cfg_eapol_gwk_hsk [<TIMEOUT> <RETRIES>]"
+
+	This command is used to set or get groupwise handshake update timeout and
+	number of retries.
+
+	Both TIMEOUT and number of RETRIES should be provided for a	'set'.
+
+	If no arguments are given, this command returns timeout	value and number
+	of retries for groupwise key.
+
+	Example:
+	./uaputl.exe sys_cfg_eapol_gwk_hsk 50 2
+	Set AP's groupwise key timeout to 50ms and number of retries to 2.
+
+	./uaputl.exe sys_cfg_eapol_gwk_hsk
+	Get AP's groupwise key timeout and number of retries.
+
+sta_filter_table
+----------------
+    "./uaputl.exe sta_filter_table <FILTERMODE> [<MACADDRESS_LIST>]"
+
+    This command is used to get or set the client station MAC address
+    filter table.
+
+    The supported options are:
+    FILTERMODE : 0 - Disable filter table
+                 1 - Allow mac address specified in the allowed list
+                 2 - Block MAC addresses specified in the  banned list
+    MACADDRESS_LIST is the list of MAC addresses to be acted upon. Each
+    MAC address must be separated with a space. Maximum of 16 MAC addresses
+    are supported.
+
+    empty - Get current client station MAC address filter table.
+
+    Example:
+	./uaputl.exe sta_filter_table 0
+		Disable filter table
+
+	./uaputl.exe sta_filter_table 1 00:50:43:20:aa:bb
+		Set AP's filter mode to allow, only MAC address "00:50:43:ab:bb" will be allowed.
+
+	./uaputl.exe sta_filter_table
+		Get AP's filter table settings.
+
+regrdwr
+-------
+     "./uaputl.exe regrdwr <TYPE> <OFFSET> [value]"
+
+     These commands are used to read the MAC, BBP and RF registers from the card.
+     TYPE can take 3 values, 1 - read/write MAC register
+                             2 - read/write BBP register
+                             3 - read/write RF  register
+
+     OFFSET specifies the offset location that is to be read.
+     This parameter can be specified either in decimal or in hexadecimal (by preceding the number with a "0x").
+
+     value if specified, then that value will be written to that offset in the specified register. Value should be
+     specified in hexadecimal.
+
+     Example:
+	./uaputl.exe regrdwr 1 0xa123
+		read MAC register 0xa123
+
+	./uaputl.exe regrdwr 1 0xa123 0xaa
+		write 0xaa to MAC register 0xa123
+
+        ./uaputl.exe regrdwr 2 0x0123
+		read BBP register 0x0123
+
+	./uaputl.exe regrdwr 2 0x0123 0xaa
+		write 0xaa to BBP register 0x0123
+
+        ./uaputl.exe regrdwr 3 0x0123
+		read RF register 0x0123
+
+	./uaputl.exe regrdwr 3 0x0123 0xaa
+		write 0xaa to RF register 0x0123
+
+memaccess
+---------
+ 	"./uaputl.exe memaccess <ADDR> [value]"
+	This commands is used to read/write to a memory address
+
+	ADDR specifies the address of the location that is to be read/write
+	This parameter can be specified either in decimal or in hexadecimal (by preceding the number with a "0x").
+
+	value if specified, then that value will be written to that address in the specified register.
+
+	Example:
+		./uaputl.exe memaccess 0xc00153e4
+			read contents of memory location 0xc00153e4
+
+
+		./uaputl.exe memaccess 0xc00153e4 0xaabbccdd
+			write value 0xaabbccdd to  memory location 0xc00153e4
+
+rdeeprom
+--------
+    "./uaputl.exe rdeeprom <offset> <bytecount>"
+
+    This command is used to read bytes from offset location on
+    EEPROM
+
+    offset: 0,4,8,..., multiple of 4
+    bytecount: 4-20, multiple of 4
+
+   	Example:
+    ./uaputl.exe rdeeprom 200 12
+        read 12 bytes from offset 200 ON EEPROM
+
+cfg_data
+--------
+ 	"./uaputl.exe cfg_data <type> [*.conf]"
+
+    This command is used to set/get the configuration data to/from the firmware.
+
+    type: 2 -- cal data
+
+   	Example:
+        ./uaputl.exe cfg_data 2 cal_data.conf
+            read cal_data from cal_data.conf and download to firmware.
+        ./uaputl.exe cfg_data 2
+            read cal_data from firmware
+
+sys_cfg_80211d
+--------------
+    "./uaputl.exe sys_cfg_80211d [state STATE] [country COUNTRY]"
+    This command is used to set/get 802.11D specific parameters.
+    If no parameters are provided, this command returns state, country and
+    domain information.
+
+    Allowed values for state are 0 for disable and 1 for enable.
+    COUNTRY is a two letter string input (derived from ISO 3166 code;
+    http://www.iso.org/iso/country_codes/iso_3166_code_lists/english_country_names_and_code_elements.htm
+    )
+
+    Countries are mapped with specific domain in file "80211d_domain.conf". In
+    order to set customize band setting, user can modify 80211d_domain.conf
+    file.
+
+    Example:
+    ./uaputl.exe sys_cfg_80211d state 0
+        To-disable
+
+    ./uaputl.exe sys_cfg_80211d state 1
+        To-enable
+
+    ./uaputl.exe sys_cfg_80211d country IN
+        for using country as INDIA
+
+    ./uaputl.exe sys_cfg_80211d state 1 country US
+        for enabling and setting country in single command.
+
+uap_stats
+---------
+    "./uaputl.exe uap_stats"
+    This command is used to get uAP statistics.
+
+    Example:
+    ./uaputl.exe uap_stats
+
+pscfg
+---------
+    "./uaputl.exe pscfg [MODE] [CTRL INACTTO MIN_SLEEP MAX_SLEEP MIN_AWAKE MAX_AWAKE]
+
+    This command is used to set or get the AP's power mode and power save params.
+
+    The supported options are:
+        MODE :     0 - disable power mode
+                   2 - enable inactivity based power save mode
+
+        PS PARAMS:
+            CTRL:  0 - disable protection frame Tx before PS
+                   1 - enable protection frame Tx before PS
+            INACTTO: Inactivity timeout in microseconds, default value is 200000 us
+            MIN_SLEEP: Minimum sleep duration in microseconds, default value 17000 us
+            MAX_SLEEP: Maximum sleep duration in microseconds, default value 17000 us
+			The value of MIN_SLEEP should be >= 5000 us.
+			The value of MAX_SLEEP should be <= beacon interval(when ctrl: 0).
+			The value of MAX_SLEEP should be <= 32000 us(when ctrl: 1).
+
+            MIN_AWAKE: Minimum awake duration in microseconds, default value is 2000 us
+            MAX_AWAKE: Maximum awake duration in microseconds, default value is 2000 us
+			The value of MIN_AWAKE should be >= 2000 us.
+            MIN_AWAKE,MAX_AWAKE only valid when MODE is set to inactivity based power save mode.
+
+
+	empty - Get current power mode and power save params.
+
+    Example:
+	./uaputl.exe pscfg 0
+		Disable AP's power mode.
+
+   	./uaputl.exe pscfg 2
+		Enable inactivity based power save mode.
+
+   	./uaputl.exe pscfg 2 1 400000 20000 20000 10000 10000
+		Enable inactivity based power save mode, enable protection, set inactivity timeout 400000 us
+        set minimum sleep duration to 20000 us, maximum sleep duration to 20000 us
+        and set minimum awake duration to 10000us, maximum awake duration to 10000 us
+
+	./uaputl.exe pscfg
+		Get current AP's power mode and power save params.
+
+hscfg
+-----
+    ./uaputl.exe hscfg [condition [[GPIO# [gap]]]]
+	This command is used to configure the host sleep parameters.
+
+	This command takes one (condition), two (condition and GPIO#) or three
+	(condition, GPIO# and gap) parameters for set. If no parameter provided,
+	get is performed.
+
+	where Condition is:
+		bit 0 = 1   -- broadcast data
+		bit 1 = 1   -- unicast data
+		bit 2 = 1   -- mac event
+		bit 3 = 1   -- multicast data
+		bit 6 = 1  --  Wakeup when mgmt frame received.
+
+	The host sleep mode will be cancelled if condition is set to 0xffff.
+	The default is 0x7.
+
+	where GPIO is the pin number of GPIO used to wakeup the host. It could be any valid
+	GPIO pin# (e.g. 0-7) or 0xff (interface, e.g. SDIO will be used instead).
+	The default is 0xff.
+
+	where Gap is the gap in milliseconds between wakeup signal and wakeup event or 0xff
+	for special setting (host acknowledge required) when GPIO is used to wakeup host.
+	The default is 200.
+
+	Examples:
+		./uaputl.exe hscfg              : Get current host sleep mode
+		./uaputl.exe hscfg 0xffff       : Cancel host sleep mode
+		./uaputl.exe hscfg 3            : Broadcast and unicast data
+		                                  Use GPIO and gap set previously
+		./uaputl.exe hscfg 2 3          : Unicast data
+		                                  Use GPIO 3 and gap set previously
+		./uaputl.exe hscfg 2 1 0xa0     : Unicast data
+		                                  Use GPIO 1 and gap 160 ms
+		./uaputl.exe hscfg 2 0xff       : Unicast data
+		                                  Use interface (e.g. SDIO)
+		                                  Use gap set previously
+		./uaputl.exe hscfg 4 3 0xff     : MAC event
+		                                  Use GPIO 3
+		                                  Special host sleep mode
+		./uaputl.exe hscfg 1 0xff 0xff  : Broadcast data
+		                                  Use interface (e.g. SDIO)
+		                                  Use gap 255ms
+
+hssetpara
+---------
+    ./uaputl.exe hssetpara condition [[GPIO# [gap]]]
+    This command is used to configure the host sleep parameters.
+
+    Note:
+    1) The usages of parameters are the same as "hscfg" command.
+    2) The parameters will be saved in the driver and be used when host suspends.
+
+sta_deauth_ext
+--------------
+    "./uaputl.exe sta_deauth_ext <STA_MAC_ADDRESS><REASON_CODE>"
+
+    This command is used to de-authenticate a client station with specific reason code.
+
+    Example:
+        ./uaputl.exe sta_deauth_ext 00:50:43:20:34:58  4
+            deauth station 00:50:43:20:34:58 with IEEE reason code 4 (Disassociated due to inactivity)
+
+mic_err
+-------
+    "./uaputl.exe mic_err <STA_MAC_ADDRESS>"
+
+    This command is used to report station mic error.
+
+    Example:
+        ./uaputl.exe mic_err 00:50:43:20:34:58
+            report mic err for station 00:50:43:20:34:58
+
+key_material
+------------
+    "./uaputl.exe key_material <MAC_ADDRESS> <KEY> [KEY_ID]"
+
+    This command is used to set key. Get operation is not supported.
+
+        MAC_ADDRESS: station mac address while setting station unicast key
+                     ff:ff:ff:ff:ff:ff while setting multicast key
+
+        KEY: hex string, allowed length should be 32 or 64.
+        KEY_ID: default value is 0.
+
+    Example:
+        ./uaputl.exe key_material ff:ff:ff:ff:ff:ff 12345678901234567890123456789012 1
+            set group key, key value is "12345678901234567890123456789012", key id is 1
+
+        ./uaputl.exe key_material 00:50:43:20:34:58 1234567890123456789012345678901234567890123456789012345678901234
+            set station 00:50:43:20:34:58 unicast key,
+            key value is "1234567890123456789012345678901234567890123456789012345678901234"
+
+sys_cfg_custom_ie
+-----------------
+    "./uaputl.exe sys_cfg_custom_ie [INDEX] [MASK] [IEBuffer]"
+
+    This command is used to set or get custom IEs for management frames.
+
+    The supported options are:
+        INDEX:       0 - IE Index is 0
+                     1 - IE Index is 1
+                     2 - IE Index is 2
+                     MAX IE Index depends on device memory.
+
+               	    -1 - Append/Delete IE automatically
+                         Delete will delete the IE from the matching IE buffer
+                         Append will append the IE to the buffer with the same mask
+        MASK :       Management subtype mask value as per bit definitions
+	                   :  Bit 0 - Association request.
+	                   :  Bit 1 - Association response.
+	                   :  Bit 2 - Reassociation request.
+	                   :  Bit 3 - Reassociation response.
+	                   :  Bit 4 - Probe request.
+	                   :  Bit 5 - Probe response.
+	                   :  Bit 8 - Beacon.
+        MASK :       MASK = 0 to clear the mask and the IE buffer
+
+        IEBuffer:    IE buffer to set in hexadecimal bytes.
+	                  The Buffer should not be space separated.
+	                  ( Maximum length = 256 bytes )
+        empty - Get IE buffer, subtype mask settings for all the indices [0-3].
+        INDEX - Only INDEX will get the IE buffer configured for the particular
+                Index.
+
+    Example:
+	./uaputl.exe sys_cfg_custom_ie
+		Get IE buffer, subtype mask settings for all indices.
+
+	./uaputl.exe sys_cfg_custom_ie 1
+		Get IE buffer and subtype mask WEP key setting for the Index = 1.
+
+	./uaputl.exe sys_cfg_custom_ie 2 0
+		Clear IE buffer and mask value for Index = 2.
+
+	./uaputl.exe sys_cfg_custom_ie 3 0x101 0xdd051234567890
+		Set IE buffer and mask value for Index = 3.
+
+	./uaputl.exe sys_cfg_custom_ie -1 0x101 0xdd051234567890
+		Append the specified IEBuffer at index with mask value of 0x101
+
+	./uaputl.exe sys_cfg_custom_ie -1 0 0xdd051234567890
+		Delete the specified IEBuffer from all the IEs.
+
+	./uaputl.exe sys_cfg_custom_ie 2 0 0xdd051234567890
+		Delete the specified IEBuffer from the IEs at index 2.
+
+coex_config
+-----------
+    "./uaputl.exe coex_config [CONFIG_FILE]"
+    This command is used to set or get the BT coex configuration settings.
+
+    The supported options are:
+        CONFIG_FILE is file contain all the BT coex settings.
+        empty - Get current BT coex settings
+
+    Example:
+	./uaputl.exe coex_config
+		Get current BT coex settings.
+
+	./uaputl.exe coex_config uapcoex.conf
+		Load BT coex configuration settings from uapcoex.conf file and set.
+
+sys_cfg_wmm
+-----------
+    "./uaputl.exe sys_cfg_wmm [qosinfo=<qosinfo>]
+                              [0]
+                              [AC_BE AIFSN ECW_MAX ECW_MIN TX_OP]
+                              [AC_BK AIFSN ECW_MAX ECW_MIN TX_OP]
+                              [AC_VI AIFSN ECW_MAX ECW_MIN TX_OP]
+                              [AC_VO AIFSN ECW_MAX ECW_MIN TX_OP]"
+
+    This command can be used set/get beacon WMM parameters
+
+    The supported option are:
+        qosinfo: qos information. User can set only MSB. Valid values are 0x80 and 0x00.
+        Lower 4 bits are managed by FW. Hence, value read for qosinfo may have
+        lower 4 bits non-zero.
+
+        AC_BE: 0
+        AC_BK: 1
+        AC_VI: 2
+        AC_V0: 3
+        AIFSN: AIFSN value
+        ECW_MAX: ECW max
+        ECW_MIN: ECW min
+        TX_OP: TXOP Limit
+        empty - Get current WMM parameters
+        When all the parameter are 0, wmm will be disabled.
+
+        Example:
+        ./uaputl.exe sys_cfg_wmm 0 3 10 4 0
+           Set AC_BE with AIFSN 3, ECW_MAX 10, ECW_MIN 4 and TXOP 0
+
+        ./uaputl.exe sys_cfg_wmm 1 7 10 4 0
+           Set AC_BK with AIFSN 7, ECW_MAX 10, ECW_MIN 4 and TXOP 0
+
+        ./uaputl.exe sys_cfg_wmm 2 2 4 3 94
+           Set AC_VI with AIFSN 2, ECW_MAX 4, ECW_MIN 3 and TXOP 94
+
+        ./uaputl.exe sys_cfg_wmm 3 2 3 2 47
+           Set AC_VO with AIFSN 2, ECW_MAX 3, ECW_MIN 2 and TXOP 47
+
+        ./uaputl.exe sys_cfg_wmm
+            Get current wmm parameters
+
+        ./uaputl.exe sys_cfg_wmm 0 3 10 4 0 1 7 10 4 0 2 2 4 3 94 3 2 3 2 47
+            Set AC_BE with AIFSN 3, ECW_MAX 10, ECW_MIN 4 and TXOP 0
+            Set AC_BK with AIFSN 7, ECW_MAX 10, ECW_MIN 4 and TXOP 0
+            Set AC_VI with AIFSN 2, ECW_MAX 4, ECW_MIN 3 and TXOP 94
+            Set AC_VO with AIFSN 2, ECW_MAX 3, ECW_MIN 2 and TXOP 47
+
+        ./uaputl.exe sys_cfg_wmm qosinfo=0x80 0 3 10 4 0 1 7 10 4 0 2 2 4 3 94 3 2 3 2 47
+            Enable wmm PS mode.
+            Set AC_BE with AIFSN 3, ECW_MAX 10, ECW_MIN 4 and TXOP 0
+            Set AC_BK with AIFSN 7, ECW_MAX 10, ECW_MIN 4 and TXOP 0
+            Set AC_VI with AIFSN 2, ECW_MAX 4, ECW_MIN 3 and TXOP 94
+            Set AC_VO with AIFSN 2, ECW_MAX 3, ECW_MIN 2 and TXOP 47
+
+        ./uaputl.exe sys_cfg_wmm 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+        ./uaputl.exe sys_cfg_wmm 0
+            Disable wmm
+
+sys_cfg_ap_wmm
+-----------
+    "./uaputl.exe sys_cfg_ap wmm [0]
+                                 [AC_BE AIFSN ECW_MAX ECW_MIN TX_OP]
+                                 [AC_BK AIFSN ECW_MAX ECW_MIN TX_OP]
+                                 [AC_VI AIFSN ECW_MAX ECW_MIN TX_OP]
+                                 [AC_VO AIFSN ECW_MAX ECW_MIN TX_OP]"
+
+    This command can be used set/get AP WMM parameters
+
+    The supported option are:
+        AC_BE: 0
+        AC_BK: 1
+        AC_VI: 2
+        AC_V0: 3
+        AIFSN: AIFSN value
+        ECW_MAX: ECW max
+        ECW_MIN: ECW min
+        TX_OP: TXOP Limit
+        empty - Get current AP WMM parameters
+        When all the parameter are 0, AP wmm will be disabled.
+
+        Example:
+        ./uaputl.exe sys_cfg_ap_wmm 0 3 10 4 0
+           Set AC_BE with AIFSN 3, ECW_MAX 10, ECW_MIN 4 and TXOP 0
+
+        ./uaputl.exe sys_cfg_ap_wmm 1 7 10 4 0
+           Set AC_BK with AIFSN 7, ECW_MAX 10, ECW_MIN 4 and TXOP 0
+
+        ./uaputl.exe sys_cfg_ap_wmm 2 2 4 3 94
+           Set AC_VI with AIFSN 2, ECW_MAX 4, ECW_MIN 3 and TXOP 94
+
+        ./uaputl.exe sys_cfg_ap_wmm 3 2 3 2 47
+           Set AC_VO with AIFSN 2, ECW_MAX 3, ECW_MIN 2 and TXOP 47
+
+        ./uaputl.exe sys_cfg_ap_wmm
+            Get current AP wmm parameters
+
+        ./uaputl.exe sys_cfg_ap_wmm 0 3 10 4 0 1 7 10 4 0 2 2 4 3 94 3 2 3 2 47
+            Set AC_BE with AIFSN 3, ECW_MAX 10, ECW_MIN 4 and TXOP 0
+            Set AC_BK with AIFSN 7, ECW_MAX 10, ECW_MIN 4 and TXOP 0
+            Set AC_VI with AIFSN 2, ECW_MAX 4, ECW_MIN 3 and TXOP 94
+            Set AC_VO with AIFSN 2, ECW_MAX 3, ECW_MIN 2 and TXOP 47
+
+        ./uaputl.exe sys_cfg_ap_wmm 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+        ./uaputl.exe sys_cfg_ap_wmm 0
+            Disable AP wmm
+
+addbapara
+---------
+    "./uaputl.exe addbapara [timeout txwinsize rxwinsize txamsdu rxamsdu]"
+	This command can be used to update the default ADDBA parameters.
+
+	The supported options are:
+	    timeout - This is the block ack timeout for ADDBA request.
+		    0 : Disable (recommended for throughput test)
+		    1 - 65535 : Block Ack Timeout in TU
+	    txwinsize - Buffer size for ADDBA request. (32 is default value)
+	    rxwinsize - Buffer size for ADDBA response. (16 is default value)
+	    txamsdu - amsdu support for ADDBA request. (1 is default value)
+		    0 : Disable amsdu in ADDBA request.
+		    1 - Enable amsdu in ADDBA request.
+	    rxamsdu - amsdu support for ADDBA response. (1 is default value)
+		    0 : Disable amsdu in ADDBA response.
+		    1 - Enable amsdu in ADDBA response.
+        empty - Get current ADDBA parameters.
+
+	Current window size limit for Tx as well as Rx is 1023.
+
+	Example:
+	./uaputl.exe addbapara
+        Get the current addba params
+	./uaputl.exe addbaparam 1000 64 8 0 0
+        This will change the ADDBA timeout to (1000 * 1024) us,	txwinsize to 64 and rxwinsize to 8
+        and disable AMSDU in ADDBA request/response.
+
+	In case the ADDBA timeout value is updated then a ADDBA is sent for all streams
+	to update the timeout value.
+
+	In case txwinsize and/or rxwinsize is updated, the effect could only be seen on
+	next ADDBA request/response. The current streams will not be affected with this
+	change.
+
+	In case of txamdsdu/rxamsdu is updated, the effect could only be seen on
+	next ADDBA request/response. The current streams will not be affected with this
+	change. AMSDU in AMPDU stream will be enabled when AP support this feature
+	and AMSDU is enabled in aggrpriotbl.
+
+sys_cfg_11n
+-----------
+    "./uaputl.exe sys_cfg_11n [ENABLE] [HTCAP] [AMPDU] [TXBFCAP] [HT_MCS_CAP]"
+    This command can be used set/get 802.11n parameters.
+
+    The supported option are:
+        ENABLE: 0 - disable 802.11n in uap
+                1 - enable 802.11n in uap
+		Note: If 802.11n is disabled, 802.11ac MUST be disabled at the same time
+        HTCAP: HT Capabilities info (default value is 0x111c)
+               Bit 15-13: Reserved set to 0
+               Bit 12: DSS/CCK mode in 40MHz enable/disable
+               Bit 11-10: Reserved set to 0
+               Bit 9-8: Reserved set to 0x01
+               Bit 7: STBC enable/disable
+               Bit 6: Short GI in 40 Mhz enable/disable
+               Bit 5: Short GI in 20 Mhz enable/disable
+               Bit 4: Green field enable/disable
+               Bit 3-2: Reserved set to 1
+               Bit 1: 20/40 Mhz enable disable.
+               Bit 0: LDPC enable/disable
+        AMPDU: A-MPDU Parameter (default value is 0x03)
+               Bit 7-5: Reserved set to 0
+               Bit 4-2: Minimum MPDU Start spacing
+                        Set to 0 for no restriction
+                        Set to 1 for 1/4 us
+                        Set to 2 for 1/2 us
+                        Set to 3 for 1 us
+                        Set to 4 for 2 us
+                        Set to 5 for 4 us
+                        Set to 6 for 8 us
+                        Set to 7 for 16 us
+               Bit 1-0: Max A-MPDU length
+        TXBFCAP: TX Beamforming capabilities
+               Bit 0    : Implicit TX BF receiving capable
+               Bit 1    : RX staggered sounding capable
+               Bit 2    : TX staggered sounding capable
+               Bit 3    : RX NDP capable
+               Bit 4    : TX NDP capable
+               Bit 5    : Implicit TX BF capable
+               Bit 6-7  : Calibration
+                       0: - not supported
+                       1: - STA can respond to a calibration request using
+                            the CSI Report, but cannot initiate calibration
+                       2: - reserved
+                       3: - STA can both initiate and respond to a calibration request
+               Bit 8    : Explicit CSI TX BF capable
+               Bit 9    : Explicit non-compressed steering capable
+               Bit 10   : Explicit compressed steering capable
+               Bit 11-12: Explicit TX BF CSI feedback
+                       0: - not supported
+                       1: - delayed feedback
+                       2: - immediate feedback
+                       3: - delayed and immediate feedback
+               Bit 13-14: Explicit non-compressed BF feedback capable
+                       0: - not supported
+                       1: - delayed feedback
+                       2: - immediate feedback
+                       3: - delayed and immediate feedback
+               Bit 15-16: Explicit compressed BF feedback capable
+                       0: - not supported
+                       1: - delayed feedback
+                       2: - immediate feedback
+                       3: - delayed and immediate feedback
+               Bit 17-18: Minimal grouping
+                       0: - no grouping (STA supports groups of 1)
+                       1: - groups of 1, 2
+                       2: - groups of 1, 4
+                       3: - groups of 1, 2, 4
+               Bit 19-20: CSI number of beamformer antennas supported
+                       0: - single TX antenna sounding
+                       1: - 2 TX antenna sounding
+                       2: - 3 TX antenna sounding
+                       3: - 4 TX antenna sounding
+               Bit 21-22: Non-compressed steering number of beamformer antennas supported
+                       0: - single TX antenna sounding
+                       1: - 2 TX antenna sounding
+                       2: - 3 TX antenna sounding
+                       3: - 4 TX antenna sounding
+               Bit 23-24: Compressed steering number of beamformer antennas supported
+                       0: - single TX antenna sounding
+                       1: - 2 TX antenna sounding
+                       2: - 3 TX antenna sounding
+                       3: - 4 TX antenna sounding
+               Bit 25-26: CSI max number of rows beamformer supported
+                       0: - single row of CSI
+                       1: - 2 rows of CSI
+                       2: - 3 rows of CSI
+                       3: - 4 rows of CSI
+               Bit 27-28: Channel estimation capability
+                       0: - 1 space time stream
+                       1: - 2 space time streams
+                       2: - 3 space time streams
+                       3: - 4 space time streams
+               Bit 29-31: Reserved
+        HT_MCS_MAP: MCS rate bitmap
+               Bit 0-7   : MCS_SET_0
+               Bit 15-8  : MCS_SET_1
+        empty - Get current 802.11n parameters.
+
+        Example:
+        ./uaputl.exe sys_cfg_11n 1 0x117e 3
+            enable 802.11n, and set HT Capabilities info to 0x117e, and A-MPDU Parameter to 0x03
+        ./uaputl.exe sys_cfg_11n 1 0x117e 3 0xFFFFFFFF
+            enable 802.11n, and set HT Capabilities info to 0x117e, A-MPDU
+            Parameter to 0x03 and TX Beamforming capabilities to 0xFFFFFFFF
+        ./uaputl.exe sys_cfg_11n 1 0x117e 3 0xFFFFFFFF 0x00100023
+            enable 802.11n, and set HT Capabilities info to 0x117e, A-MPDU
+            Parameter to 0x03, TX Beamforming capabilities to 0xFFFFFFFF and
+            MCS rate bitmap to 0x00100023.
+        ./uaputl.exe sys_cfg_11n 0
+            disable 802.11n in uap
+        ./uaputl.exe sys_cfg_11n
+            Get current 802.11n parameters
+
+aggrpriotbl
+-----------
+        "./uaputl.exe aggrpriotbl <m0> <n0> <m1> <n1> ... <m7> <n7>"
+        This command is used set/get the priority table for AMPDU/AMSDU traffic per tid.
+	    This command can also be used to disable AMPDU/AMSDU for a given tid.
+	    In case of AMPDU this priority table will be used to setup block ack (to make
+	    sure the highest priority tid always uses AMPDU as we have limited AMPDU streams)
+
+        The supported option are:
+            <m0> <n0> <m1> <n1> ... <m7> <n7>
+
+	    <mx> - This is priority for Tid0 for AMPDU packet. A priority could be any
+                values between 0 - 7, 0xff to disable aggregation.
+	    <nx> - This is priority for Tid0 for AMSDU packet. A priority could be any
+		        values between 0 - 7, 0xff to disable aggregation.
+
+        empty - Get current priority table for AMPDU/AMSDU traffic.
+
+        Example:
+        ./uaputl.exe aggrpriotbl
+            This command will get the current Priority table for AMPDU and AMSDU.
+			<2 2 0 0 1 1 3 3 4 4 5 5 255 255 255 255>. This is read as
+			<"Prio for AMPDU for Tid0" "Prio for AMSDU for Tid0"
+			"Prio for AMPDU for Tid1" "Prio for AMSDU for Tid1" and so on
+
+	    ./uaputl.exe aggrpriotbl 2 2 0 0 1 1 3 3 4 4 5 5 255 255 255 255
+            This will set the priority table for AMPDU and AMSDU
+			Priority for Tid0/AMPDU = 2, Tid0/AMSDU = 2, Tid1/AMPDU = 0, Tid1/AMSDU = 0
+			and so on. Aggregation for Tid6 and Tid7 are disabled.
+			Here higher the priority number, higher the priority (i.e. 7
+			has higher priority than 6). Similarly for AMSDU.
+
+	    ./uaputl.exe aggrpriotbl 0xff 2 0xff 0 0xff 1 0xff 3 0xff 4 0xff 5 0xff 0xff 0xff 0xff
+            This will disable AMPDU for all the TIDs but will still keep AMSDU enabled to Tid0 to Tid5
+
+	    The default setting is 2 255 0 255 1 255 3 255 4 255 5 255 255 255 255 255.
+
+	    A delBA should be seen in case a disable happens on a TID for which AMPDU stream
+	        is currently setup.
+
+        Note:- This command should only be issued in disconnected state.
+
+addbareject
+-----------
+        "./uaputl.exe addbareject <m0> <m1> ... <m7>"
+        This command is used set/get the addbareject table for all the TIDs.
+	    This command can also be used to enable rejection of ADDBA requests for a given tid.
+
+        The supported option are:
+            <m0> <m1> ... <m7>
+        <mX> - This can be 0/1 for TidX. 1 enables rejection of ADDBA request for TidX and
+		   0 would accept any ADDBAs for TidX.
+        empty - Get current addbareject table for all the TIDs.
+
+        Example:
+        ./uaputl.exe addbareject
+            This command will get the current table.
+	        [0 0 0 0 0 0 1 1]. ADDBA would be accepted for all TIDs except for TID [6,7].
+	        This is the default state.
+
+        ./uaputl.exe addbareject 0 0 1 1 0 0 0 0
+            This command will accept ADDBA requests for Tid [0,1,4,5,6,7] and reject ADDBA requests for Tid [2,3]
+
+	    ./uaputl.exe addbareject 1 1 1 1 1 1 1 1
+            This will enable rejection of ADDBA requests for all Tids.
+
+        Note:- This command should only be issued in disconnected state.
+
+sys_cfg_tdls_ext_cap
+--------------------
+
+    "./uaputl.exe sys_cfg_tdls_ext_cap [CONFIG_FILE]"
+
+    This command is used to set/get TDLS extended capability settings.
+
+    If CONFIG_FILE is provided, a SET is performed , else a GET is performed.
+
+    Examples:
+        ./uaputl.exe sys_cfg_tdls_ext_cap config/tdls_ext_cap.conf
+        Set TDLS extended capability parameters in the config file.
+        ./uaputl.exe sys_cfg_tdls_ext_cap
+        Get TDLS extended capability parameters.
+
+httxbfcfg
+---------
+	"./uaputl.exe httxbfcfg <ACTION> [ACT_DATA]"
+
+	This command is used to configure the TX beamforming options.
+
+	The supported options are:
+		ACTION: 0 - Control global parameters for beamforming
+                1 - Performs NDP Sounding for PEER
+		        2 - TX BF interval in milliseconds
+		        3 - Enable/Disable beamforming/sounding for the indicated peer.
+		        4 - TX BF SNR Threshold for peer
+		ACT_DATA: Specific data for the above actions
+                  For ACTION 0 - Beamforming enable/disable, sounding enable/disable,
+                                 FB type, snr_threshold, sounding interval, Beamformig mode
+		          For ACTION 1 - PEER MAC and status
+		          For ACTION 2 - TX BF interval
+		          For ACTION 3 - PEER MAC
+		          For ACTION 4 - PEER MAC and SNR
+		          empty - Get action specific settings
+
+	Examples:
+		./uaputl.exe httxbfcfg 0                          : Get current global configuration parameter
+		./uaputl.exe httxbfcfg 2 00:50:43:20:BF:64        : Get the TX BF periodicity for a given peer
+		./uaputl.exe httxbfcfg 3                          : Get the list of MAC addresses that have
+		                                                      beamforming and/or sounding enabled
+		./uaputl.exe httxbfcfg 4                          : Get the list of PEER MAC, SNR tuples
+		                                                      programmed into the firmware.
+		./uaputl.exe httxbfcfg 0 0 0 3 10 500 5           : Disable beamforming, sounding, set FB type
+		                                                      to 3, snr threshold to 10, sounding interval
+		                                                      to 500 ms and beamforming mode to 5
+		./uaputl.exe httxbfcfg 1 00:50:43:20:BF:64        : Perform NDP Trigger sounding to peer
+		                                                      00:50:43:20:BF:64
+		./uaputl.exe httxbfcfg 2 00:50:43:20:BF:64 500    : Set TX BF periodicity for peer 00:50:43:20:BF:64
+		                                                      to 500 milliseconds
+		./uaputl.exe httxbfcfg 3 00:50:43:20:BF:43 1 0 3  : Enable beamforming, disable sounding and set
+		                                                      FB type to 3 for peer 00:50:43:20:BF:43
+		./uaputl.exe httxbfcfg 4 00:50:43:20:BF:24 43     : Set TX BF SNR threshold to peer
+
+
+httxcfg
+	This command is used to configure various 11n specific configuration
+	for transmit (such as Short GI, Channel BW and Green field support)
+
+	where <m> is <txcfg>
+	This is a bitmap and should be used as following
+		Bit 15-10: Reserved set to 0
+        Bit 9-8: Rx STBC set to 0x01
+        BIT9 BIT8  Description
+        0    0     No spatial streams
+        0    1     One spatial streams supported
+        1    0     Reserved
+        1    1     Reserved
+		Bit 7: STBC enable/disable
+		Bit 6: Short GI in 40 Mhz enable/disable
+		Bit 5: Short GI in 20 Mhz enable/disable
+		Bit 4: Green field enable/disable
+		Bit 3-2: Reserved set to 1
+		Bit 1: 20/40 Mhz enable disable.
+		Bit 0: LDPC enable/disable
+
+	When Bit 1 is set then firmware could transmit in 20Mhz or 40Mhz based
+	on rate adaptation. When this bit is reset then firmware will only
+	transmit in 20Mhz.
+
+	where <n> is <band>
+	<band> - This is the band info for <txcfg> settings.
+		0: Settings for both 2.4G and 5G bands
+		1: Settings for 2.4G band
+		2: Settings for 5G band
+
+	Example:
+		./uaputl.exe -i uapX httxcfg
+		This will display HT Tx configuration for 2.4G and 5G band.
+
+		./uaputl.exe -i uapX httxcfg 0x62
+		This will enable 20/40 and Short GI but will disable Green field for 2.4G and 5G band.
+
+		./uaputl.exe -i uapX httxcfg 0x30 1
+		This will enable Short GI 20 Mhz and Green field for 2.4G band.
+
+	The default value is 0x20 for 2.4G and 0x62 for 5G.
+
+	Note:- If 20/40 MHz support is disabled in htcapinfo, device will not transmit
+	in 40 MHz even 20/40 MHz is enabled in httxcfg.
+
+htstreamcfg
+	This command is used to set/get HT stream configuration.
+	The setting only takes effect in next association.
+
+	Usage:
+		./uaputl.exe -i uapX htstreamcfg [n]
+
+	where <n>
+		0x11: HT stream 1x1 mode
+		0x22: HT stream 2x2 mode
+
+	Examples:
+		./uaputl.exe -i uapX htstreamcfg        : Get current setting
+		./uaputl.exe -i uapX htstreamcfg 0x11   : Set HT stream 1x1 mode
+		./uaputl.exe -i uapX htstreamcfg 0x22   : Set HT stream 2x2 mode
+
+deepsleep
+---------
+    "./uaputl.exe deepsleep [MODE] [IDLE_TIME]"
+    This command is used to set/get auto deep sleep mode.
+
+    The supported option are:
+        [MODE]: Enable/disable auto deep sleep mode (1/0)
+        [IDLE_TIME]: Idle time in milliseconds after which firmware will put the device
+                    in deep sleep mode. Default value is 100 ms.
+        empty - Get current deep sleep mode.
+
+    Example:
+    ./uaputl.exe deepsleep          : Display auto deep sleep mode
+    ./uaputl.exe deepsleep 1        : Enable auto deep sleep mode, idle time unchanged
+    ./uaputl.exe deepsleep 0        : Disable auto deep sleep mode
+    ./uaputl.exe deepsleep 1 500    : Enable auto deep sleep mode with idle time 500 ms
+
+    Note:
+            Deepsleep must be disabled before changing idle time.
+
+sdcmd52rw
+	This command is used to read/write a controller register in
+	Secure Digital I/O Interfaces.
+
+	Usage:
+    "./uaputl.exe sdcmd52rw <function number> <register address> [value]"
+
+	For SDIO MMC driver, only function 0 and 1 access is allowed. And there
+	is a limitation for function 0 write, only vendor specific CCCR registers
+	(0xf0 -0xff) are permiited.
+
+	Examples:
+    ./uaputl.exe sdcmd52rw 1 3          : Issue cmd52 to read function 1, register 3.
+    ./uaputl.exe sdcmd52rw 1 1 0x3f     : Issue cmd52 to write function 1, register 1
+                                          with value 0x3f.
+
+txpwrlimit_cfg_get
+txpwrlimit_2g_cfg_set
+txpwrlimit_5g_cfg_set
+------------------
+    This command is used to set/get the configuration data of Tx power limitation.
+    Note: The configuration set should be issued when no STA is connected.
+
+    Examples:
+        ./uaputl.exe hostcmd config/txpwrlimit_cfg.conf txpwrlimit_cfg_get
+        ./uaputl.exe hostcmd config/txpwrlimit_cfg.conf txpwrlimit_2g_cfg_set
+        ./uaputl.exe hostcmd config/txpwrlimit_cfg.conf txpwrlimit_5g_cfg_set
+
+rxpktcoal_cfg
+-------------
+   "./uaputl.exe rxpktcoal_cfg [PKT-THRESHOLD] [TIMEOUT]"
+
+	This is used to get/set RX packet coalescing paramters
+
+    The supported option are:
+        [PKT-THRESHOLD]: count after which packets would be sent to host. Valid values 1-7
+        [TIMEOUT]: timeout in ms after which packets would be sent to host. Valid values 1-4
+        Coalescing is disabled if both or either of packet_thershold and delay is zero
+
+        RX packet coalescing parameters can be changed only when device is in
+        idle state i.e. all interfaces are disconnected.
+
+    Example:
+    ./uaputl.exe rxpktcoal_cfg      : Display RX packet coalescing settings
+    ./uaputl.exe rxpktcoal_cfg 5 1  : Enable RX packet coalescing: packet count 5, delay 1.
+    ./uaputl.exe rxpktcoal_cfg 0 0  : Disable RX packet coalescing.
+
+tx_data_pause
+-------------
+  "./uaputl.exe tx_data_pause [ENABLE][TX_BUF_CNT]"
+
+    This command is used to set/get tx data pause settings.
+
+    The supported option are:
+        [ENABLE]: Enable/disable pause tx events from firmware to host.
+        [TX_BUF_CNT]: Max number of TX buffers allowed for all PS clients
+        empty - Get current tx data pause settings
+
+    Example:
+    ./uaputl.exe tx_data_pause      : Display tx data pause settings
+    ./uaputl.exe tx_data_pause 1    : Enable pause tx event, max tx buffer number unchanged.
+    ./uaputl.exe tx_data_pause 0    : Disable pasue tx event, max tx buffer number unchanged.
+    ./uaputl.exe tx_data_pause 1 15 : Enable pause tx event, with max tx buffer number 15.
+
+vhtcfg
+	This command is used to set and get various 11ac specific configuration
+	for transmission and reception. For the SET operation, all paramaters
+	may be applied.	For the GET operation, only the first two parameters are applied.
+	The 6th argument "rx_mcs_set" can be used to disbale/enable 802.11ac.
+
+	where <j> is <band>
+	<band> - This is the band setting for the vhtcfg
+		0: Settings for both 2.4G and 5G bands (for SET operation, 11N BW only)
+		1: Settings for 2.4G band (for 11N BW only)
+		2: Settings for 5G band
+
+	where <k> is <txrx>
+	<txrx> - This parameter specifies the configuration of VHT operation for TX or/and VHT capabilities
+		3: configuration of VHT capabilities (uAP only)
+	Note: For the UAP, only 3 is supported for txrx.
+
+	where [l] is <bwcfg>
+	<bwcfg> - This parameter specifies the bandwidth (BW) configuration
+		  applied to the vhtcfg.
+	If <txrx> is 3 (For uAP),
+		0: Tx BW follows the BW (20/40 MHz) from 11N CFG
+		1: Tx BW follows the BW (80/160/80+80 MHz) from VHT Capabilities
+		   defined in <vhtcap> below for 5G band.
+
+	where [m] is <vhtcap>
+	<vhtcap> - This parameter specifies the VHT capabilities info if <txrx> is 2 (association)
+		   or the VHT Tx operations if <txrx> is 1 (Tx operations).
+		   The VHT Tx operation should be a subset of VHT capabilities for association.
+		   It is a bitmap and should be used as follows:
+
+		Bit 31-30: Reserved and set to 0
+		Bit 29:    TX antenna pattern consistency
+			   1: antenna pattern does not change
+			   0: antenna pattern might change
+		Bit 28:    RX antenna pattern consistency
+			   1: antenna pattern does not change
+			   0: antenna pattern might change
+		Bit 27-26: VHT link adaptation capable
+			   0: no feedback of VHT MFB from the STA
+			   1: unsolicted feedback of VHT MFB from the STA
+			   2: both response and unsolicted feedback of VHT MFB
+			      from the STA
+			   3: reserved and set to 0
+		Bit 25-23: Maximum A-MPDU length exponent
+		Bit 22:    +HTC-VHT capable (1: enable. 0 disable)
+		Bit 21:    VHT TXOP PS
+		Bit 20:    MU beamformee capable (1: enable. 0 disable)
+		Bit 19:    MU beamformer capable (1: enable. 0 disable)
+		Bit 18-16: Number of sounding dimensions (set to maximum-1
+			   if Bit 11 is 1. Otherwise, reserved and set to 0)
+		Bit 15-13: Compressed steering number of beamformer
+			   antennas supported (set to maximum-1 if Bit 12 is 1.
+			   Otherwise, reserved and set to 0)
+		Bit 12:    SU beamformee capable (1: enable. 0 disable)
+		Bit 11:    SU beamformer capable (1: enable. 0 disable)
+		Bit 10-8:  Rx STBC
+			   0: no support
+			   1: support of 1 spatial stream
+			   2: support of 1-2 streams
+			   3: support of 1-3 spatial streams
+			   4: support of 1-4 spatial streams
+			   5-7: reserved and set to 0
+		Bit 7:     TX STBC (1: enable. 0 disable)
+		Bit 6:     Short GI for 160 and 80+80 MHz (1: enable. 0 disable)
+		Bit 5:     Short GI for 80 MHz (1: enable. 0 disable)
+		Bit 4:     Rx LDPC (1: enable. 0 disable)
+		Bit 3-2:   Supported channel width set.
+			   0: no support of either 160 or 80+80 MHz.
+			   1: support of 160 MHz
+			   2: support of both 160 and 80+80 MHz.
+			   3: reserved and set to 0.
+		Bit 1-0:   Maximum MPDU length
+			   0: 3895 octets.
+			   1: 7991 octets.
+			   2: 11454 octets.
+			   3: reserved and set to 0.
+
+	where [n] is <tx_mcs_map>,
+	<tx_mcs_map> - This parameter specifies the TX MCS map. It may not be used for the STA if <txrx> is 1 (Tx operations).
+		It is a bitmap and should be used as following
+		Bit 15-0:  MCS map, which is defined as folows:
+			Bit 15-14: Max MCS for 8 SS
+			Bit 13-12: Max MCS for 7 SS
+			Bit 11-10: Max MCS for 6 SS
+			Bit 9-8:   Max MCS for 5 SS
+			Bit 7-6:   Max MCS for 4 SS
+			Bit 5-4:   Max MCS for 3 SS
+			Bit 3-2:   Max MCS for 2 SS
+			Bit 1-0:   Max MCS for 1 SS
+
+	where [o] is <rx_mcs_map>.
+	<rx_mcs_map> - This parameter specifies the RX MCS map. It may not be used for the STA if <txrx> is 1 (Tx operations).
+		It is a bitmap with the same sructure as for <tx_mcs_map>
+		rx_mcs_map = 0xffff : FW will disable 802.11ac
+                rx_mcs_map = others : FW will enable 802.11ac
+
+	Note: The user setting of vhtcap may be overwritten by the driver
+	      if the setting of those fields is beyond the hardware capabilities.
+
+	Examples:
+		./uaputl.exe -i uapX vhtcfg 2 3            : Get current VHT configuration in 5GHz for the uAP.
+		./uaputl.exe -i uapX vhtcfg 2 3 0 0x000001f0 0xfffa 0xfffa
+		    : Set the current/maximum VHT configuration in 5GHz for the uAP.
+		      Both Tx and Rx supports MCS 0-9 for both 1 and 2 spatial streams.
+		./uaputl.exe -i uapX vhtcfg 2 3 0 0x000001b0
+		    : Set the VHT capability information in 5GHz for the uAP, and keep the Tx/Rx MCS Map same as before.
+
+dfstesting
+----------
+  "./uaputl.exe dfstesting [<user_cac_pd> <user_nop_pd> <no_chan_change> <fixed_chan_num>]"
+
+    This command is used to set/get DFS testing settings.
+
+    The supported option are:
+        <user_cac_pd>: user-configured Channel Availability Check in msec
+                       0 = disable, use default period (60000)
+                       1-65535 = enable with that period
+        <user_nop_pd>: user-configured Non-Occupancy Period in sec
+                       0 = disable, use default period (1800)
+                       1-65535 = enable with that period
+        <no_chan_change>: enable/disable no channel change on radar
+                          0 = disable, 1 = enable (overrides below)
+        <fixed_chan_num>: user-configured channel to change to on radar
+                          0 = disable, 1-255 = enable with that channel
+                          (channel validity for region, etc. is not checked)
+                          (only takes effect if no_chan_change = 0)
+
+    Example:
+    ./uaputl.exe dfstesting             : Get current dfstesting settings
+    ./uaputl.exe dfstesting 2000 0 0 0  : user_cac=2sec, others disabled/default
+    ./uaputl.exe dfstesting 0 0 1 0     : only no_chan_change enabled
+    ./uaputl.exe dfstesting 0 120 0 64  : user_nop=2min, force chan 64 on radar
+
+cscount
+---------------
+
+  "./uaputl.exe cscount [<channel_switch_count>]"
+
+    This command is used to configure the number of beacons AP sends with channel switch IE, before channel change due to
+    radar detection. If not configured, <channel_switch_count> is set to 5 by default.
+
+    The supported options are:
+        <channel_switch_count>: user configured channel switch count
+                                5-20 = configure with that value
+
+   Example:
+   ./uaputl.exe cscount         : Get user configured channel switch count value
+   ./uaputl.exe cscount 10      : Set channel switch count to 10
+
+
+mgmtframectrl
+-------------
+  "./uaputl.exe mgmtframectrl [MASK]"
+
+    This command is used to set/get management frame control mask.
+
+    where the parameter [MASK] is the bit mask of management frame reception.
+        Following are the bit definitions.
+        Bit 0 : Association Request
+        Bit 1 : Association Response
+        Bit 2 : Re-Association Request
+        Bit 3 : Re-Association Response
+        Bit 4 : Probe Request
+        Bit 5 : Probe Response
+        Bit 8 : Beacon Frames
+
+    Example:
+    ./uaputl.exe mgmtframectrl 0x101
+    Set management frame control mask to 0x101.
+
+restrict_client_mode
+--------------------
+	"./uaputl.exe restrict_client_mode [<ENABLE> [MODE_CONFIG]]"
+
+	This command is used to set/get the mode in which the ex-Stations can connect to the uAP.
+	If no arguments are given, this command returns the current configuration.
+	By default this feature will be disabled.
+	[ENABLE]:
+		1: Enable the feature.
+		0: Disable the feature.
+	[MODE_CONFIG]: config mode.
+		Bit 0:	B only Mode.
+		Bit 1:	A only Mode.
+		Bit 2:	G only Mode.
+		Bit 3:	N only Mode.
+		Bit 4:	AC only Mode.
+
+	Example:
+	./uaputl.exe restrict_client_mode 1 0x8.
+	Only N mode clients will be able to connect. Association will fail for other clients.
+
+	./uaputl.exe restrict_client_mode 0.
+	This feature is disabled.
+
+	Note:
+	The set operation should be performed before bss is started.
+	User should make sure that the mode advertized by uAP in beacons
+	(i.e. combination of supported/extended rates IE and capability IEs)
+	is superset of the mode allowed for ex-STA associations using this TLV.
+
+uap_oper_ctrl
+-------------
+	"./uaputl.exe uap_oper_ctrl [control] [chanopt] [bandcfg] [channel]"
+
+	This command is used to set/get uAP operation control when in-STA disconnected with ext-AP.
+	If no arguments are given, this command returns the current configuration.
+
+	The supported options are:
+		<control> : 0  default, do nothing
+				   2  uAP stops and restart automatically
+		<chanopt> Specify which channel should be used when uap restarts automatically
+				   1: uap restarts on default 2.4G/channel 6
+				   2: uap restart on band/channel configured by driver previously
+				   3: uap restart on band/channel configured by parameter bandcfg/channel
+		<bandcfg> This parameter specifies the bandwidth when chanopt is 3
+				   0: 20Mhz
+				   2: 40Mhz
+				   3: 80Mhz
+		<channel> This parameter specifies the channel will be used when chanopt is 3
+
+		Example:
+		./uaputl.exe uap_oper_ctrl  2 1
+		uap stops and restart automatically when in-STA disconnects with ext-AP,
+		and restart on default 2.4G/channel 6.
+
+		./uaputl.exe uap_oper_ctrl  2 2
+		uap stops and restart automatically when in-STA disconnects with ext-AP,
+		and restart on band/channel configured by driver previously.
+
+		./uaputl.exe uap_oper_ctrl  2 3 2 36
+		uap stops and restart automatically when in-STA disconnects with ext-AP,
+		and restart on channel 36, bandwidth 40.
+
+		./uaputl.exe uap_oper_ctrl  0
+		when in-STA disconnects with ext-AP, uap will stay on current operation channel.
+
+		./uaputl.exe uap_oper_ctrl
+		Get current uap operation control setting.
+===============================================================================
+        U S E R  M A N U A L  F O R  MLANEVENT
+
+NAME
+mlanevent.exe
+
+This tool can be used to listen for and obtain events from the uAP driver
+through the netlink layer.
+
+----------------
+Supported events
+----------------
+STA_DEAUTH
+STA_ASSOC
+BSS_START
+BSS_IDLE
+BSS_ACTIVE
+
+-----------------
+Details of events
+-----------------
+
+STA_DEAUTH
+----------
+    For this event, the following information is shown:
+        + Deauthenticated STA MAC address.
+        + Reason for deauthentication.
+
+STA_ASSOC
+---------
+    For this event, the following information is shown:
+        + STA MAC address.
+
+BSS_START
+---------
+    For this event, the following information is shown:
+        + AP MAC address.
+
+BSS_IDLE
+--------
+    For this event, there is no associated information.
+
+BSS_ACTIVE
+----------
+    For this event, there is no associated information.
+
+===============================================================================
+        U S E R  M A N U A L  F O R  IWPRIV
+
+NAME
+	This manual describes the usage of private commands used in Marvell MLAN
+	Linux UAP Driver.
+
+	To use parameters as hex format, a '0x' must precede it for the parameters to
+	be parsed properly.
+
+SYNOPSIS
+	iwpriv <uapX> <command> [sub-command] ...
+
+	iwpriv uapX version
+	iwpriv uapX verext
+	iwpriv uapX start
+	iwpriv uapX stop
+	iwpriv uapX bssstart
+	iwpriv uapX bssstop
+	iwpriv uapX fwreload <path>
+	iwpriv uapX apcfg "ASCII_CMD=AP_CFG,SSID=TEST_uAP,[SEC,][KEY,]
+	                   [CHANNEL,][PREAMBLE,][MAX_SCB,][END]"
+
+DESCRIPTION
+	Those commands are used to send additional commands to the Marvell MLAN
+	card via the Linux device driver.
+
+	The uapX parameter specifies the network device that is to be used to
+	perform this command on. It could be uap0, uap1 etc.
+
+version
+	This is used to get the current version of the driver and the firmware.
+
+verext
+	Retrieve and display an extended version string from the firmware
+
+	Usage:
+		iwpriv uapX verext [#]
+
+	where [#] is an optional argument to retrieve a specific version string,
+	omission of the argument retrieves the 0 indexed string.
+
+start
+	Start the uAP driver.
+
+	Usage:
+		iwpriv uapX start
+
+stop
+	Stop the uAP driver.
+
+	Usage:
+		iwpriv uapX stop
+
+bssstart
+	Start the AP mode, so that uAP will start transmitting beacon.
+
+	Usage:
+		iwpriv uapX bssstart
+
+bssstop
+	Stop the AP mode and disconnect all stations. uAP will stop
+	transmitting beacon as well.
+
+	Usage:
+		iwpriv uapX bssstop
+
+fwreload
+	Reload the firmware. Here string "FW_PATH=" in the path
+	argument is mandatory part.
+
+	Usage:
+		iwpriv uapX fwreload <path>
+
+apcfg
+	This command is used to set the AP configurations. Here string
+	"ASCII_CMD=AP_CFG" is minimum requirement in the ASCII string.
+	Note: BSS will be stopped then restarted if BSS is already started
+	when the command is received.
+
+	Usage:
+		iwpriv uapX apcfg "ASCII_CMD=AP_CFG,SSID=TEST_uAP,[SEC=sec,]
+			[KEY=key,][CHANNEL=channel,][MAX_SCB=max_scb,][END]"
+
+	Where the parameters are:
+		SSID:       Set SSID to be used in beacon and probe response
+		[SEC]:      Security modes - open, wep128, wpa-psk or wpa2-psk
+		            11n will be auto disabled in wep128 and wpa-psk mode
+		[KEY]:      Encrypted key for wep128, wpa-psk or wpa2-psk, minimum 8 chars
+		[CHANNEL]:  Channel to be selected
+		[MAX_SCB]:  Maximum STA number
+		[END]:      Optional termination in ASCII string
+
+	Examples:
+		iwpriv uap0 apcfg "ASCII_CMD=AP_CFG,SSID=TEST_uAP"
+                                        : Set AP SSID to "TEST_uAP"
+		iwpriv uap0 apcfg "ASCII_CMD=AP_CFG,SSID=TEST_uAP,SEC=open"
+                                        : Set AP SSID to "TEST_uAP" and
+                                          security mode is disabled
+		iwpriv uap0 apcfg "ASCII_CMD=AP_CFG,SSID=TEST_uAP,SEC=WPA2-PSK,KEY=ecbe5facdbfe234a"
+                                        : Set AP SSID to "TEST_uAP" and security mode
+                                          to WPA2-SPK and encrypted key ecbe5facdbfe234a
+		iwpriv uap0 apcfg "ASCII_CMD=AP_CFG,SSID=TEST_uAP,CHANNEL=8"
+                                        : Set AP SSID to "TEST_uAP" and
+                                          set the AP channel to 8
+
+===============================================================================

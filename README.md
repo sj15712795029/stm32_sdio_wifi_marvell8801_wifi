@@ -1,11 +1,31 @@
 # stm32f1_mrvl8801_wifi
 
 ## 平台介绍：
-**stm32f103 RET6 + Marvell88w8801 SDIO Wi-Fi**
+**目前我们的STM32F103 RET6分为V1/V2**
 <br>MCU我们选用STM32F103RET6,ROM 512K,RAM 64K
 <br>Wi-Fi模块我们选用Marvell88w8801,我们采用SDIO接口，完全手写驱动
-<br>另外，我们还提供丰富的外设，SPI FLASH(W25Q128)，USB device,OLED(SSD1306),OV7670(FIFO)
-<br>[![](https://img-blog.csdnimg.cn/20191205162412878.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl8zOTAxNzQ3OQ==,size_16,color_FFFFFF,t_70)](https://shop220811498.taobao.com)
+
+**一.stm32f103 RET6 + Marvell88w8801 SDIO Wi-Fi V2开发板**
+<BR>1）开发板功能图示
+<br>[![](https://img-blog.csdnimg.cn/20200627174833624.jpg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1hpYW9YaWFvUGVuZ0Jv,size_16,color_FFFFFF,t_70)](https://shop220811498.taobao.com)
+<br>1）TYPE C串口调试接口
+<br>2）TYPE C USB Devic，可把spi flash模拟U盘使用
+<br>3）复位按键
+<br>4）电源按键
+<br>5）SWD下载器
+<br>6）用户按键
+<br>7）ADC接口
+<br>8）喇叭左右声道接口
+<br>9）WM8960 codec ic
+<br>10）耳机接口
+<br>11）Line-in接口
+<br>12）蓝牙接口
+<br>13）OLED接口
+<br>14）SDIO Wi-Fi接口，兼容正点原子Linux开发板
+<br>15）ESP8266接口，兼容正点原子接口
+**二.stm32f103 RET6 + Marvell88w8801 SDIO Wi-Fi V1开发板**
+<BR>1）开发板功能图示
+<br>[![](https://img-blog.csdnimg.cn/20200627174817882.jpg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1hpYW9YaWFvUGVuZ0Jv,size_16,color_FFFFFF,t_70)](https://shop220811498.taobao.com)
 <br>1）BOOT切换跳帽，都接GND是MCU从默认flash启动，也就是0x0800 0000
 <br>2）摄像头接口，此接口我们接我们的OV7670摄像头
 <br>3）存储芯片，此存储芯片型号为W25Q128，方便用户存储数据

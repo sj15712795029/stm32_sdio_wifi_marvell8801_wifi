@@ -1,0 +1,356 @@
+=================================================================================
+        U S E R  M A N U A L  F O R  OpenWrt
+
+This section describes detailed steps to add Marvell Wireless NIC (sdio/usb/pcie)
+driver to OpenWrt build system.
+
+Add marvell driver (sdio/usb/pcie) to OpenWrt build system.
+
+1. Go to the openwrt source code folder
+2. make menuconfig
+	choose x86 platform
+	other general openwrt configurations please refer to:
+	https://wiki.openwrt.org/doc/howto/build
+3. After make menuconfig
+	make sure that following configurations are set in .config
+	CONFIG_PACKAGE_hostapd=y
+	CONFIG_PACKAGE_hostapd-common=y
+	CONFIG_PACKAGE_kmod-cfg80211=y
+4. Go to the openwrt source code folder and Compile openwrt BSP
+	make V=s [-j[number]]
+5. After the first time compiling, openwrt/dl folder will be created
+   , related packages will be downloaded during compiling, so you need
+   network access as long as you need to compile openwrt BSP.
+6. Go to the openwrt source code folder: openwrt/dl/
+7. Find compat-wireless-xxxx-xx-xx.tar.bz2, and uncompress the package
+8. Go to compat-wireless-xxxx-xx-xx/drivers/net/wireless/marvell/
+9. Modify compat-wireless-xxxx-xx-xx/drivers/net/wireless/marvell/Kconfig
+
+	source "drivers/net/wireless/marvell/libertas/Kconfig"
+	source "drivers/net/wireless/marvell/libertas_tf/Kconfig"
+	source "drivers/net/wireless/marvell/mwifiex/Kconfig"
+	+source "drivers/net/wireless/marvell/mrvl-pcie/Kconfig"
+	+source "drivers/net/wireless/marvell/mrvl-sd8xxx/Kconfig"
+	+source "drivers/net/wireless/marvell/mrvl-usb/Kconfig"
+
+10. Modify compat-wireless-xxxx-xx-xx/drivers/net/wireless/marvell/Makefile
+
+	obj-$(CPTCFG_LIBERTAS_THINFIRM)	+= libertas_tf/
+	obj-$(CPTCFG_MWIFIEX)	+= mwifiex/
+	+obj-$(CPTCFG_MRVL_PCIE)  += mrvl-pcie/
+	+obj-$(CPTCFG_MRVL_SD8XXX) += mrvl-sd8xxx/
+	+obj-$(CPTCFG_MRVL_USB) += mrvl-usb/
+
+11. Go to compat-wireless-xxxx-xx-xx/drivers/net/wireless/marvell/
+12. mkdir (mrvl-pcie/mrvl-sd8xxx/mrvl-usb)
+13. copy (pcie/sdio/usb)/wlan_src/* to (mrvl-pcie/mrvl-sd8xxx/mrvl-usb)
+14. Go to mrvl-pcie/mrvl-sd8xxx/mrvl-usb
+15. Add new Kconfig:
+	mrvl-pcie/Kconfig
+
+	+config MRVL_PCIE
+	+	tristate "Marvell Wireless Driver for PCIE 8997"
+	+	depends on m
+	+	depends on PCI
+	+	depends on CFG80211
+	+	depends on WIRELESS_EXT
+	+	---help---
+	+	  This adds support for wireless adapters based on Marvell
+	+	  pcie 8997 chipsets with PCIe interface.
+	+
+	+	  If you choose to build it as a module, it will be called
+	+	  pcie8xxx.
+
+	mrvl-sd8xxx/Kconfig
+
+	+config MRVL_SD8XXX
+	+	tristate "Marvell sdio 802.11n/802.11ac Wireless cards"
+	+	depends on m
+	+	depends on MMC
+	+	depends on CFG80211
+	+	depends on WIRELESS_EXT
+	+	---help---
+	+	  A driver for Marvell sdio 802.11n/802.11ac Wireless cards.
+
+	mrvl-usb/Kconfig
+
+	+config MRVL_USB
+	+	tristate "Marvell sdio 802.11n/802.11ac Wireless cards"
+	+	depends on m
+	+	depends on USB
+	+	depends on CFG80211
+	+	depends on WIRELESS_EXT
+	+	---help---
+	+	A driver for Marvell sdio 802.11n/802.11ac Wireless cards.
+
+16. Open moal_main.h under (mrvl-pcie/mrvl-sd8xxx/mrvl-usb)/mlinux/
+
+	find #define COMPAT_VERSION_CODE KERNEL_VERSION_CODE(x, x, x)
+	modify (x, x, x) to the kernel version code of backports/compat-wireless package
+
+	backported kernel version code could be found in
+	compat-wireless-xxxx-xx-xx/version as following
+
+	'BACKPORTED_KERNEL_VERSION="v4.4-rc5-1913-gc8fdf68"'
+	v4.4 means KERNEL_VERSION(4, 4, 0)
+
+17. Modify (mrvl-pcie/mrvl-sd8xxx/mrvl-usb)/Makefile
+
+	# OpenWrt support
+	-CONFIG_OPENWRT_SUPPORT=n
+	+CONFIG_OPENWRT_SUPPORT=y
+
+	...
+
+	#############################################################################
+	# Select Platform Tools
+	#############################################################################
+
+	MODEXT = ko
+	-ccflags-y += -I$(M)/mlan
+	+ccflags-y += -I$(M)/drivers/net/wireless/marvell/(mrvl-pcie/mrvl-sd8xxx/mrvl-usb)/mlan
+	ccflags-y += -DLINUX
+
+
+	ifeq ($(CONFIG_EMBEDDED_SUPP_AUTH), y)
+	-ccflags-y += -I$(M)/mlan/esa
+	-ccflags-y += -I$(M)/mlan/esa/common
+	+ccflags-y += -I$(M)/drivers/net/wireless/marvell/(mrvl-pcie/mrvl-sd8xxx/mrvl-usb)/mlan/esa
+	+ccflags-y += -I$(M)/drivers/net/wireless/marvell/(mrvl-pcie/mrvl-sd8xxx/mrvl-usb)/mlan/esa/common
+	endif
+
+18. compress compat-wireless-xxxx-xx-xx to its original .tar.bz2 format
+19. Go to the openwrt source code folder: openwrt/package/kernel/mac80211/
+20. Modify openwrt/package/kernel/mac80211/Makefile.
+
+	PKG_DRIVERS = \
+		adm8211 \
+		ath ath5k ath9k ath9k-common ath9k-htc ath10k \
+		b43 b43legacy \
+		carl9170 \
+		hermes hermes-pci hermes-pcmcia hermes-plx\
+		iwl-legacy iwl3945 iwl4965 iwlwifi \
+		lib80211 \
+		libipw ipw2100 ipw2200 \
+		libertas-sdio libertas-usb libertas-spi \
+		mac80211-hwsim \
+		mt7601u \
+		mwl8k mwifiex-pcie \
+		+mrvl-pcie \
+		+mrvl-sd8xxx \
+		+mrvl-usb \
+		p54-common p54-pci p54-spi p54-usb \
+		rt2x00-lib rt2x00-pci rt2x00-usb \
+		rt2400-pci rt2500-pci rt2500-usb \
+
+	...
+
+	+define KernelPackage/mrvl-pcie
+	+  $(call KernelPackage/mac80211/Default)
+	+  TITLE:=Marvell pcie wireless driver
+	+  URL:=http://wireless.kernel.org/en/users/Drivers/mwifiex
+	+  DEPENDS+= @PCI_SUPPORT +kmod-mac80211 +@DRIVER_11N_SUPPORT
+	+  FILES:= \
+	+	$(PKG_BUILD_DIR)/drivers/net/wireless/marvell/mrvl-pcie/mlan.ko \
+	+	$(PKG_BUILD_DIR)/drivers/net/wireless/marvell/mrvl-pcie/pcie8xxx.ko
+	+  AUTOLOAD:=$(call AutoProbe,mrvl-pcie)
+	+endef
+
+	+define KernelPackage/mrvl-pcie/description
+	+ Kernel modules for Marvell pcie 802.11n/802.11ac PCIe Wireless cards
+	+endef
+
+	+define KernelPackage/mrvl-sd8xxx
+	+  $(call KernelPackage/mac80211/Default)
+	+  DEPENDS+= +kmod-cfg80211 +kmod-lib80211 +kmod-mmc +@DRIVER_WEXT_SUPPORT
+	+  TITLE:=Marvell sdio Wireless Driver
+	+  FILES:= \
+	+	$(PKG_BUILD_DIR)/drivers/net/wireless/marvell/mrvl-sd8xxx/mlan.ko \
+	+	$(PKG_BUILD_DIR)/drivers/net/wireless/marvell/mrvl-sd8xxx/sd8xxx.ko
+	+  AUTOLOAD:=$(call AutoProbe, mrvl-sd8xxx)
+	+endef
+
+	+define KernelPackage/mrvl-sd8xxx/description
+	+ Kernel modules for Marvell sdio 802.11n/802.11ac Wireless cards
+	+endef
+
+	+define KernelPackage/mrvl-usb
+	+  $(call KernelPackage/mac80211/Default)
+	+  DEPENDS+= @USB_SUPPORT +kmod-cfg80211 +kmod-usb-core +kmod-lib80211 +@DRIVER_WEXT_SUPPORT
+	+  TITLE:=Marvell usb Wireless Driver
+	+  FILES:= \
+	+	$(PKG_BUILD_DIR)/drivers/net/wireless/marvell/mrvl-usb/mlan.ko \
+	+	$(PKG_BUILD_DIR)/drivers/net/wireless/marvell/mrvl-usb/usb8xxx.ko
+	+  AUTOLOAD:=$(call AutoProbe, mrvl-usb)
+	+endef
+
+	+define KernelPackage/mrvl-usb/description
+	+ Kernel modules for Marvell usb 802.11n/802.11ac Wireless cards
+	+endef
+
+	...
+
+	config-$(call config_package,mwl8k) += MWL8K
+	config-$(call config_package,mwifiex-pcie) += MWIFIEX MWIFIEX_PCIE
+	+config-$(call config_package,mrvl-pcie) += MRVL_PCIE
+	+config-$(call config_package,mrvl-sd8xxx) += MRVL_SD8XXX
+	+config-$(call config_package,mrvl-usb) += MRVL_USB
+	config-$(call config_package,rtl8180) += RTL8180
+	config-$(call config_package,rtl8187) += RTL8187
+
+	...
+
+	$(eval $(call KernelPackage,mwl8k))
+	$(eval $(call KernelPackage,mwifiex-pcie))
+	+$(eval $(call KernelPackage,mrvl-pcie))
+	+$(eval $(call KernelPackage,mrvl-sd8xxx))
+	+$(eval $(call KernelPackage,mrvl-usb))
+	$(eval $(call KernelPackage,p54-common))
+
+OpenWrt configuration
+21. Go to OpenWrt srouce code folder
+22. Make menuconfig
+
+   select one of the newly added marvell driver
+	│-> Kernel modules
+	│	-> Wireless Drivers
+	|		->mrvl-pcie
+	|		->mrvl-sd8xxx
+	|		->mrvl-usb
+
+23. Other general configurations, please refer to the https://wiki.openwrt.org/doc/howto/build
+24. after menucofig make soure that following configurations are seletect
+
+	CONFIG_PACKAGE_hostapd=y
+	CONFIG_PACKAGE_hostapd-common=y
+	CONFIG_PACKAGE_kmod-cfg80211=y
+
+	Go to openwrt folder and re-build openwrt BSP
+	make V=s [-j[number]]
+
+	After openwrt BSP is successfully build, kernel modules could be found
+	both in the build folder and the running OS once openwrt is boot up.
+	kernel modules will be written to u-disk while openwrt img is burned to u-disk.
+
+	kernel modules in openwrt build dir:
+	openwrt/build_dir/target-x86_64_uClibc-0.9.33.2/linux-x86_64/compat-wireless-2016-01-10/
+	ipkg-x86_64/kmod-mrvl-(usb/sd8xxx/pcie)/lib/modules/3.18.45/
+
+	kernel modules in openwrt running OS:
+	/lib/modules/xx.xx.xx/
+
+25. To support SDIO card in OpenWrt x86 platforma
+	Add following kernel configurations for OpenWrt
+	Go to OpenWrt source code foler
+
+	make kernel_menuconfig
+
+	Device Drivers---->
+		--- MMC/SD/SDIO card support
+                  [ ]   MMC debugging
+                  [ ]   MMC host clock gating
+                  *** MMC/SD/SDIO Card Drivers ***
+                  < >   MMC block device driver
+                  < >   SDIO UART/GPS class support
+                  < >   MMC host test driver
+                  *** MMC/SD/SDIO Host Controller Drivers ***
+                  <*>   Secure Digital Host Controller Interface support
+                  <*>   SDHCI support on PCI bus
+                  [ ]     Ricoh MMC Controller Disabler
+                  < >   SDHCI platform and OF driver helper
+                  < >   Winbond W83L51xD SD/MMC Card Interface support
+                  < >   TI Flash Media MMC/SD Interface support
+                  < >   ENE CB710 MMC/SD Interface support
+                  < >   VIA SD/MMC Card Reader Driver
+                  < >   Renesas USDHI6ROL0 SD/SDIO Host Controller support
+
+	Compile OpenWrt using Make V=s, then write openwrt img to u-disk and boot up
+
+26. Bring up marvell wireless NIC on OpenWrt system
+
+	copy pcie/sdio/usb firmware to /lib/firmware/mrvl folder
+	On OpenWrt running OS
+	scp usrname@<target_pc ip address>:/path/firmware.bin /lib/firmware/mrvl
+
+	Another way is to add firmware binary to OpenWrt source code
+
+27. load marvell pcie/sdio/usb driver modules
+
+    End with Marvell Wirelss NIC card bring up on OpenWrt
+
+=======================================================================================================
+If firmware is copied to OpenWrt via scp, following steps could be ignored.
+28. Add firmware binary in OpenWrt
+	Copy pcie/usb/sdio firmware to folder:
+	openwrt/build_dir/target-x86_64_uClibc-0.9.33.2/linux-firmware-52442afee9907bc32a058f22bb3295d040677c26/mrvl/
+29. Go to penwrt/package/firmware/linux-firmware
+	Modify marvell.mk as following
+
+	+Package/mrvl-pcie-firmware = $(call Package/firmware-default,Marvell PCIE8997 firmware)
+	+define Package/mrvl-pcie-firmware/install
+	+	$(INSTALL_DIR) $(1)/lib/firmware/mrvl
+	+	$(INSTALL_DATA) \
+	+		$(PKG_BUILD_DIR)/mrvl/pcieusb8997_combo_v4.bin \
+	+		$(1)/lib/firmware/mrvl/
+	+endef
+	+$(eval $(call BuildPackage,mrvl-pcie-firmware))
+
+	+Package/mrvl-sd8xxx-firmware = $(call Package/firmware-default,Marvell SDIO8997 firmware)
+	+define Package/mrvl-sd8xxx-firmware/install
+	+	$(INSTALL_DIR) $(1)/lib/firmware/mrvl
+	+	$(INSTALL_DATA) \
+	+		$(PKG_BUILD_DIR)/mrvl/sdsd8997_combo_v4.bin \
+	+		$(1)/lib/firmware/mrvl/
+	+endef
+	+$(eval $(call BuildPackage,mrvl-sd8xxx-firmware))
+
+	+Package/mrvl-usb-firmware = $(call Package/firmware-default,Marvell SDIO8997 firmware)
+	+define Package/mrvl-usb-firmware/install
+	+	$(INSTALL_DIR) $(1)/lib/firmware/mrvl
+	+	$(INSTALL_DATA) \
+	+		$(PKG_BUILD_DIR)/mrvl/usbusb8997_combo_v4.bin \
+	+		$(1)/lib/firmware/mrvl/
+	+endef
+	+$(eval $(call BuildPackage,mrvl-usb-firmware))
+
+30. re-modify openwrt/package/kernel/mac80211/Makefile
+
+	for PCIE
+	+  DEPENDS+= @PCI_SUPPORT +kmod-mac80211 +@DRIVER_11N_SUPPORT +mrvl-pcie-firmware
+	for SDIO
+	+  DEPENDS+= +kmod-cfg80211 +kmod-lib80211 +kmod-mmc +@DRIVER_WEXT_SUPPORT +mrvl-sd8xxx-firmware
+	for USB
+	+  DEPENDS+= @USB_SUPPORT +kmod-cfg80211 +kmod-usb-core +kmod-lib80211 +@DRIVER_WEXT_SUPPORT +mrvl-usb-firmware
+31. Go to step 25.
+=======================================================================================================
+To support SDIO, USB and PCIE in one OpenWrt BSP
+if no need to support multi bus types in one BSP, ignore the following steps
+32. Re-modify Modify openwrt/package/kernel/mac80211/Makefile.
+	for PCIE
+        +       $(PKG_BUILD_DIR)/drivers/net/wireless/marvell/mrvl-pcie/mlan-pcie.ko \
+	for SDIO
+	+       $(PKG_BUILD_DIR)/drivers/net/wireless/marvell/mrvl-sd8xxx/mlan-sdio.ko \
+	for USB
+	+       $(PKG_BUILD_DIR)/drivers/net/wireless/marvell/mrvl-usb/mlan-usb.ko \
+33. Re-modify (mrvl-pcie/mrvl-sd8xxx/mrvl-usb)/Makefile
+	for PCIE
+
+	-obj-m := mlan.o
+	-mlan-objs := $(MLANOBJS)
+	+obj-m := mlan-pcie.o
+	+mlan-pcie-objs := $(MLANOBJS)
+
+	for SDIO
+
+	-obj-m := mlan.o
+	-mlan-objs := $(MLANOBJS)
+	+obj-m := mlan-sdio.o
+	+mlan-sdio-objs := $(MLANOBJS)
+
+	for USB
+
+	-obj-m := mlan.o
+	-mlan-objs := $(MLANOBJS)
+	+obj-m := mlan-usb.o
+	+mlan-usb-objs := $(MLANOBJS)
+34. Go to step 25.

@@ -1,0 +1,161 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{73E2C0FC-2D62-48B7-BA4E-8D3D75FEBAA9}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>stm32f1_hw_test</RootNamespace>
+    <AssemblyName>stm32f1_hw_test</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <PlatformTarget>x86</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <PlatformTarget>x86</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>硬件.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>.\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Deployment" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Form1.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Form1.Designer.cs">
+      <DependentUpon>Form1.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="Form1.resx">
+      <DependentUpon>Form1.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\串口打开.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\串口关闭.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\读.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\购买.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\蓝灯亮.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\蓝灯灭.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\清空.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\扫描.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\速度.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\文件.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\写.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\发送.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\开始.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\暂停.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\设 置.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\确认.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\保存图片.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\关闭摄像头.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\开启摄像头.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\清除.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\更新.png" />
+    <None Include="Resources\湿度.png" />
+    <None Include="Resources\停止更新.png" />
+    <None Include="Resources\温度.png" />
+    <Content Include="硬件.ico" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
