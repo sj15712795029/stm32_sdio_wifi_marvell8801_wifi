@@ -42,12 +42,8 @@
 <br>14）串口芯片，USB转串口
 <br>15）USB调试接口，此接口是USB debug
 <br>16）复位按键，复位MCU
-## 测试例程
-**此开发板一共分为两个综合测试例程**
-<br>1) 硬件测试例程（需要bilibili视频链接以及上位机图片）
-<br>[![](https://img-blog.csdnimg.cn/20191206095622718.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl8zOTAxNzQ3OQ==,size_16,color_FFFFFF,t_70)](https://shop220811498.taobao.com)
-<br>2) Wi-Fi测试例程（需要bilibili视频链接以及上位机图片）
-<br>[![](https://img-blog.csdnimg.cn/20191206095733689.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl8zOTAxNzQ3OQ==,size_16,color_FFFFFF,t_70)](https://shop220811498.taobao.com)
+## 视频说明
+[**开发板资料，视频，使用视频说明（点击我，哔哩哔哩视频）**](https://www.bilibili.com/video/BV12t4y1974Q?from=search&seid=11200186700468330596)
 ## 购买链接
 <br>[淘宝购买连接：点击购买Marvell8801开发板](https://item.taobao.com/item.htm?spm=a1z10.1-c-s.w4004-22329603896.8.5aeb41f9mR4na3&id=609729761614)
 ## 资料预看，购买后可全部查看
