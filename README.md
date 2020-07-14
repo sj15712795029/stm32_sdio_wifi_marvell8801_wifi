@@ -45,6 +45,7 @@
 ## 视频说明
 [**开发板资料，视频，使用视频说明（点击我，哔哩哔哩视频）**](https://www.bilibili.com/video/BV12t4y1974Q?from=search&seid=11200186700468330596)
 ## 购买链接
-<br>[淘宝购买连接：点击购买Marvell8801开发板](https://item.taobao.com/item.htm?spm=a1z10.1-c-s.w4004-22329603896.8.5aeb41f9mR4na3&id=609729761614)
+<br>[**淘宝V2购买连接：点击购买Marvell8801 V2开发板**](https://item.taobao.com/item.htm?spm=a1z10.1-c-s.w4004-22329603896.8.5aeb41f9mR4na3&id=609729761614)
+<br>[**淘宝V1购买连接：点击购买Marvell8801 V1开发板**](https://item.taobao.com/item.htm?spm=a1z10.1-c-s.w4004-22329603896.26.5aeb41f9sVPcfc&id=623552067826)
 ## 资料预看，购买后可全部查看
 <br>[开发手册下载](https://pan.baidu.com/s/1dcE5XYLJh0Z2T6Z5P6z4fQ)
