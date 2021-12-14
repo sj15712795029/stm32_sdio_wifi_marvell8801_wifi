@@ -1,0 +1,4 @@
+---- HAL_PCDEx_BCD_VBUSDetect Matches (3 in 3 files) ----
+Hw_exti.c (d:\rtos\！！！！产品发布资料\stm32_marvell8801_wifi\4-系统源码\stm32f4_wifi_综合例程\board\stm32f412):			HAL_PCDEx_BCD_VBUSDetect(&hpcd_USB_OTG_FS);
+Stm32f4xx_hal_pcd_ex.c (d:\rtos\！！！！产品发布资料\stm32_marvell8801_wifi\4-系统源码\stm32f4_wifi_综合例程\bsp\cortex-m4\src):void HAL_PCDEx_BCD_VBUSDetect(PCD_HandleTypeDef *hpcd)
+Stm32f4xx_hal_pcd_ex.h (d:\rtos\！！！！产品发布资料\stm32_marvell8801_wifi\4-系统源码\stm32f4_wifi_综合例程\bsp\cortex-m4\inc):void HAL_PCDEx_BCD_VBUSDetect(PCD_HandleTypeDef *hpcd);

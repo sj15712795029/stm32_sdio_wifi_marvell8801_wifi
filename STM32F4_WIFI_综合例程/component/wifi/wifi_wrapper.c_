@@ -1,0 +1,1887 @@
+/*
+1.PDN引脚(牵扯到wifi reset)
+2.OV7670摄像头驱动(hw test方法和上位机显示)
+3.UI BUG修复
+4.UI工具优化
+
+
+一下需要出视频+文档
+调试Linux程序				2天
+分析Linux code				1周
+分析单片机code				1周
+移植lwip os相关				1周
+移植Linux code				3周
+*/
+
+/* 视频系列
+使用说明 免费
+框架介绍 免费
+模组介绍 免费
+开发板介绍 免费
+计划介绍 免费
+代码结构介绍 免费
+1.SDIO系列				29.9
+	--> SDIO协议介绍
+	--> stm32 SDIO 驱动协议说明
+	--> Linux SDIO 框架介绍
+2.Linux SDIO wifi的使用	69.9
+	--> 调试使用Linux wifi
+	--> 分析marvell 8801 手册
+	--> 分析SDIO wifi code
+3.单片机驱动marvell wifi
+	--> 结合marvell8801手册分析单片机code 69.9
+
+4.移植Linux lwip(raw+os)	19.9
+全系列 199.9
+
+
+*/
+#include <stdlib.h>
+#include "wifi_wrapper.h"
+#include "board_wrapper.h"
+
+#include "marvell88w8801_core.h"
+#include "cjson.h"
+
+#include "lwip/tcp.h"
+#include "lwip/udp.h"
+#include "lwip/dns.h"
+#include "lwip/dhcp.h"
+#include "lwip/apps/ping/ping.h"
+#include "lwip/apps/mqtt.h"
+
+
+extern psdio_core_t phw_sdio_core;
+/* WIFI core */
+wifi_wrapper_core_t wifi_wrapper_core;
+pwifi_wrapper_core_t pwifi_wrapper_core = &wifi_wrapper_core;
+
+
+ip_addr_t ping_ipaddr;
+
+
+void wifi_init_result(uint8_t status)
+{
+    uint8_t *wifi_status_string;
+    cJSON *wifi_json_status = cJSON_CreateObject();
+    cJSON_AddStringToObject(wifi_json_status, "FUNC", "WIFI");
+    cJSON_AddStringToObject(wifi_json_status, "OPERATE", "WIFI_ON");
+    if(status == 0)
+        cJSON_AddStringToObject(wifi_json_status, "STATUS", "SUCCESS");
+    else
+        cJSON_AddStringToObject(wifi_json_status, "STATUS", "FAIL");
+
+    wifi_status_string = (uint8_t*)cJSON_Print(wifi_json_status);
+
+    printf("%s\n",wifi_status_string);
+    cJSON_Delete(wifi_json_status);
+    free(wifi_status_string);
+}
+void wifi_scan_result(uint8_t *ssid,uint8_t rssi,uint8_t channel,uint8_t *encryption_mode)
+{
+    uint8_t *wifi_status_string;
+    cJSON *wifi_json_status = cJSON_CreateObject();
+    cJSON_AddStringToObject(wifi_json_status, "FUNC", "WIFI");
+    cJSON_AddStringToObject(wifi_json_status, "OPERATE", "WIFI_SCAN");
+    cJSON_AddStringToObject(wifi_json_status, "STATUS", "SUCCESS");
+    cJSON_AddStringToObject(wifi_json_status, "PARAM1", (const char*)ssid);
+    cJSON_AddNumberToObject(wifi_json_status, "PARAM2", rssi);
+    cJSON_AddNumberToObject(wifi_json_status, "PARAM3", channel);
+    cJSON_AddStringToObject(wifi_json_status, "PARAM4", (const char*)encryption_mode);
+
+    wifi_status_string = (uint8_t *)cJSON_Print(wifi_json_status);
+
+    printf("%s\n",wifi_status_string);
+    cJSON_Delete(wifi_json_status);
+    free(wifi_status_string);
+}
+
+void wifi_connect_result(uint8_t status)
+{
+    uint8_t *wifi_status_string;
+    cJSON *wifi_json_status = cJSON_CreateObject();
+    cJSON_AddStringToObject(wifi_json_status, "FUNC", "WIFI");
+    cJSON_AddStringToObject(wifi_json_status, "OPERATE", "WIFI_CONNECT");
+    if(status == 0)
+        cJSON_AddStringToObject(wifi_json_status, "STATUS", "SUCCESS");
+    else
+        cJSON_AddStringToObject(wifi_json_status, "STATUS", "FAIL");
+
+    wifi_status_string = (uint8_t *)cJSON_Print(wifi_json_status);
+
+    printf("%s\n",wifi_status_string);
+    cJSON_Delete(wifi_json_status);
+    free(wifi_status_string);
+}
+
+
+
+void wifi_start_ap_result(uint8_t status)
+{
+    uint8_t *wifi_status_string;
+    cJSON *wifi_json_status = cJSON_CreateObject();
+    cJSON_AddStringToObject(wifi_json_status, "FUNC", "WIFI");
+    cJSON_AddStringToObject(wifi_json_status, "OPERATE", "WIFI_START_AP");
+    if(status == 0)
+        cJSON_AddStringToObject(wifi_json_status, "STATUS", "SUCCESS");
+    else
+        cJSON_AddStringToObject(wifi_json_status, "STATUS", "FAIL");
+
+    wifi_status_string = (uint8_t *)cJSON_Print(wifi_json_status);
+
+    printf("%s\n",wifi_status_string);
+    cJSON_Delete(wifi_json_status);
+    free(wifi_status_string);
+}
+
+
+void wifi_ap_connect_result(uint8_t *name,uint8_t *mac,uint8_t *ip)
+{
+    uint8_t mac_str[20] = {0};
+    uint8_t *wifi_status_string;
+    cJSON *wifi_json_status = cJSON_CreateObject();
+    cJSON_AddStringToObject(wifi_json_status, "FUNC", "WIFI");
+    cJSON_AddStringToObject(wifi_json_status, "OPERATE", "WIFI_AP_CON_IND");
+
+    cJSON_AddStringToObject(wifi_json_status, "STATUS", "SUCCESS");
+    cJSON_AddStringToObject(wifi_json_status, "PARAM1", (const char*)name);
+
+    sprintf((char*)mac_str,"%02x:%02x:%02x:%02x:%02x:%02x",mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]);
+    cJSON_AddStringToObject(wifi_json_status, "PARAM2", (const char*)mac_str);
+    cJSON_AddStringToObject(wifi_json_status, "PARAM3", (const char*)ip);
+
+    printf("wifi_ap_connect_result\n");
+    printf("name %s\n",name);
+    printf("mac %s\n",mac_str);
+    printf("ip %s\n",ip);
+    wifi_status_string = (uint8_t *)cJSON_Print(wifi_json_status);
+
+    printf("%s\n",wifi_status_string);
+    cJSON_Delete(wifi_json_status);
+    free(wifi_status_string);
+}
+
+void wifi_ap_disconnect_result(uint8_t *mac)
+{
+    uint8_t mac_str[20] = {0};
+    uint8_t *wifi_status_string;
+    cJSON *wifi_json_status = cJSON_CreateObject();
+    cJSON_AddStringToObject(wifi_json_status, "FUNC", "WIFI");
+    cJSON_AddStringToObject(wifi_json_status, "OPERATE", "WIFI_AP_DISCON_RET");
+
+    cJSON_AddStringToObject(wifi_json_status, "STATUS", "SUCCESS");
+
+    sprintf((char*)mac_str,"%02x:%02x:%02x:%02x:%02x:%02x",mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]);
+    cJSON_AddStringToObject(wifi_json_status, "PARAM1", (const char*)mac_str);
+
+    printf("wifi_ap_disconnect_result\n");
+    printf("mac %s\n",mac_str);
+    wifi_status_string = (uint8_t *)cJSON_Print(wifi_json_status);
+
+    printf("%s\n",wifi_status_string);
+    cJSON_Delete(wifi_json_status);
+    free(wifi_status_string);
+}
+
+void wifi_ping_runing_hook(ip_addr_t *addr,uint32_t time)
+{
+    uint8_t *wifi_status_string;
+    cJSON *wifi_json_status = cJSON_CreateObject();
+    cJSON_AddStringToObject(wifi_json_status, "FUNC", "WIFI");
+    cJSON_AddStringToObject(wifi_json_status, "OPERATE", "WIFI_PING");
+
+    cJSON_AddStringToObject(wifi_json_status, "STATUS", "SUCCESS");
+
+    cJSON_AddStringToObject(wifi_json_status, "PARAM1", (const char*) ipaddr_ntoa(addr));
+    cJSON_AddNumberToObject(wifi_json_status, "PARAM2", time);
+
+    wifi_status_string = (uint8_t *)cJSON_Print(wifi_json_status);
+
+    printf("%s\n",wifi_status_string);
+    cJSON_Delete(wifi_json_status);
+    free(wifi_status_string);
+}
+
+void wifi_ping_stop_hook(uint16_t send_count,uint16_t recv_count)
+{
+    uint8_t *wifi_status_string;
+    cJSON *wifi_json_status = cJSON_CreateObject();
+    cJSON_AddStringToObject(wifi_json_status, "FUNC", "WIFI");
+    cJSON_AddStringToObject(wifi_json_status, "OPERATE", "WIFI_STOP_PING");
+
+    cJSON_AddStringToObject(wifi_json_status, "STATUS", "SUCCESS");
+
+    cJSON_AddNumberToObject(wifi_json_status, "PARAM1", send_count);
+    cJSON_AddNumberToObject(wifi_json_status, "PARAM2", recv_count);
+
+    printf("wifi_ping_stop_hook\n");
+    printf("send_count %d\n",send_count);
+    printf("recv_count %d\n",recv_count);
+    wifi_status_string = (uint8_t *)cJSON_Print(wifi_json_status);
+
+    printf("%s\n",wifi_status_string);
+    cJSON_Delete(wifi_json_status);
+    free(wifi_status_string);
+}
+
+
+
+static wifi_cb_t wifi_cb =
+{
+    wifi_init_result,
+    wifi_scan_result,
+    wifi_connect_result,
+    wifi_start_ap_result,
+    wifi_ap_connect_result,
+    wifi_ap_disconnect_result,
+};
+
+static int8_t  nibble_for_char(uint8_t c)
+{
+    if (c >= '0' && c <= '9') return c - '0';
+    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+    if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+    return -1;
+}
+
+struct udp_pcb *udp_active_pcb= NULL;
+uint16_t udp_local_port = 0;
+uint16_t udp_remote_port = 0;
+ip_addr_t udp_remote_ipaddr;
+uint8_t app_udp_recv_buffer[1600] = {0};
+void app_udp_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port)
+{
+    if (p != NULL)
+    {
+        memset(app_udp_recv_buffer,0,sizeof(app_udp_recv_buffer));
+        pbuf_copy_partial(p, app_udp_recv_buffer, p->tot_len, 0);
+
+        uint8_t *wifi_status_string;
+        cJSON *wifi_json_status = cJSON_CreateObject();
+        cJSON_AddStringToObject(wifi_json_status, "FUNC", "WIFI");
+        cJSON_AddStringToObject(wifi_json_status, "OPERATE", "WIFI_UDP_RECV");
+
+        cJSON_AddStringToObject(wifi_json_status, "STATUS", "SUCCESS");
+
+        cJSON_AddStringToObject(wifi_json_status, "PARAM1", (const char*)app_udp_recv_buffer);
+        cJSON_AddNumberToObject(wifi_json_status, "PARAM2", p->tot_len);
+
+        printf("app_udp_recv len %d\n",p->tot_len);
+        wifi_status_string = (uint8_t *)cJSON_Print(wifi_json_status);
+
+        printf("%s\n",wifi_status_string);
+        cJSON_Delete(wifi_json_status);
+        free(wifi_status_string);
+
+        pbuf_free(p);
+    }
+}
+
+
+ip_addr_t tcp_server_ip;
+uint16_t tcp_remote_server_port = 0;
+struct tcp_pcb *tcp_client_active_pcb = NULL;
+
+uint8_t app_tcp_client_recv_buffer[1600] = {0};
+err_t app_tcp_client_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err)
+{
+    if (p != NULL)
+    {
+
+        memset(app_tcp_client_recv_buffer,0,sizeof(app_tcp_client_recv_buffer));
+        pbuf_copy_partial(p, app_tcp_client_recv_buffer, p->tot_len, 0);
+
+        uint8_t *wifi_status_string;
+        cJSON *wifi_json_status = cJSON_CreateObject();
+        cJSON_AddStringToObject(wifi_json_status, "FUNC", "WIFI");
+        cJSON_AddStringToObject(wifi_json_status, "OPERATE", "WIFI_TCPC_RECV");
+
+        cJSON_AddStringToObject(wifi_json_status, "STATUS", "SUCCESS");
+
+        cJSON_AddStringToObject(wifi_json_status, "PARAM1", (const char*)app_tcp_client_recv_buffer);
+        cJSON_AddNumberToObject(wifi_json_status, "PARAM2", p->tot_len);
+
+        printf("app_udp_recv len %d\n",p->tot_len);
+        wifi_status_string = (uint8_t *)cJSON_Print(wifi_json_status);
+
+        printf("%s\n",wifi_status_string);
+        cJSON_Delete(wifi_json_status);
+        free(wifi_status_string);
+
+        tcp_recved(tpcb, p->tot_len);
+        pbuf_free(p);
+    }
+    else
+    {
+        err = tcp_close(tpcb);
+        printf("Connection is closed! err=%d\n", err);
+    }
+    return ERR_OK;
+}
+
+err_t app_tcp_client_connect(void *arg, struct tcp_pcb *tpcb, err_t err)
+{
+    printf("connected %d\n",err);
+    tcp_recv(tpcb, app_tcp_client_recv);
+
+    return ERR_OK;
+}
+
+
+#define TCP_CLIENT_COUNT 8
+typedef struct
+{
+    struct tcp_pcb *tcp_client_pcb;
+    ip_addr_t tcp_client_ip;
+} tcp_server_client_t;
+tcp_server_client_t tcp_client[TCP_CLIENT_COUNT];
+
+uint16_t tcp_local_server_port = 0;
+struct tcp_pcb *tcp_server_active_pcb = NULL;
+uint8_t app_tcp_server_recv_buffer[1600] = {0};
+err_t app_tcp_server_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err)
+{
+    if (p != NULL)
+    {
+        printf("TCP tester received %d bytes from %s:%d!\n", p->tot_len, ipaddr_ntoa(&tpcb->remote_ip), tpcb->remote_port);
+
+        memset(app_tcp_server_recv_buffer,0,sizeof(app_tcp_server_recv_buffer));
+        pbuf_copy_partial(p, app_tcp_server_recv_buffer, p->tot_len, 0);
+
+        uint8_t *wifi_status_string;
+        cJSON *wifi_json_status = cJSON_CreateObject();
+        cJSON_AddStringToObject(wifi_json_status, "FUNC", "WIFI");
+        cJSON_AddStringToObject(wifi_json_status, "OPERATE", "WIFI_TCPS_RECV");
+
+        cJSON_AddStringToObject(wifi_json_status, "STATUS", "SUCCESS");
+
+        cJSON_AddStringToObject(wifi_json_status, "PARAM1", (const char*)ipaddr_ntoa(&tpcb->remote_ip));
+        cJSON_AddNumberToObject(wifi_json_status, "PARAM2", tpcb->remote_port);
+        cJSON_AddStringToObject(wifi_json_status, "PARAM3", (const char*)app_tcp_server_recv_buffer);
+        cJSON_AddNumberToObject(wifi_json_status, "PARAM4", p->tot_len);
+
+        wifi_status_string = (uint8_t *)cJSON_Print(wifi_json_status);
+
+        printf("%s\n",wifi_status_string);
+        cJSON_Delete(wifi_json_status);
+        free(wifi_status_string);
+
+        tcp_recved(tpcb, p->tot_len);
+        pbuf_free(p);
+    }
+    else
+    {
+        uint8_t index = 0;
+        printf("TCP tester client %s:%d closed!\n", ipaddr_ntoa(&tpcb->remote_ip), tpcb->remote_port);
+        for(index = 0; index < TCP_CLIENT_COUNT; index++)
+        {
+            if(ip4_addr_cmp(&tpcb->remote_ip,&(tcp_client[index].tcp_client_ip)))
+            {
+                memset(&(tcp_client[index]),0,sizeof(tcp_server_client_t));
+                break;
+            }
+        }
+        tcp_close(tpcb);
+    }
+    return ERR_OK;
+}
+err_t app_tcp_server_sent(void *arg, struct tcp_pcb *tpcb,u16_t len)
+{
+    printf("TCP tester client %s:%d send %d byte success!\n", ipaddr_ntoa(&tpcb->remote_ip), tpcb->remote_port,len);
+
+    return ERR_OK;
+}
+
+static err_t app_tcp_server_accept(void *arg, struct tcp_pcb *newpcb, err_t err)
+{
+    uint8_t index = 0;
+    printf("TCP tester accepted %s:%d!\n", ipaddr_ntoa(&newpcb->remote_ip), newpcb->remote_port);
+    tcp_recv(newpcb, app_tcp_server_recv);
+    tcp_sent(newpcb, app_tcp_server_sent);
+
+    for(index = 0; index < TCP_CLIENT_COUNT; index++)
+    {
+        if(tcp_client[index].tcp_client_ip.addr == 0)
+        {
+            ip4_addr_copy(tcp_client[index].tcp_client_ip,newpcb->remote_ip);
+            tcp_client[index].tcp_client_pcb = newpcb;
+            break;
+        }
+    }
+
+    return ERR_OK;
+}
+
+extern struct netif mrvl88w8801_lwip;
+void app_udp_dhcp_show_ip(u8_t *ip,u8_t *mask,u8_t *gateway)
+{
+    struct dhcp *dhcp;
+
+    if (dhcp_supplied_address(&mrvl88w8801_lwip))
+    {
+        dhcp = netif_dhcp_data(&mrvl88w8801_lwip);
+        printf("DHCP supplied address!\n");
+        printf("IP address: %s\n", ip4addr_ntoa(&dhcp->offered_ip_addr));
+        printf("Subnet mask: %s\n", ip4addr_ntoa(&dhcp->offered_sn_mask));
+        printf("Default gateway: %s\n", ip4addr_ntoa(&dhcp->offered_gw_addr));
+        memcpy(ip,ip4addr_ntoa(&dhcp->offered_ip_addr),strlen(ip4addr_ntoa(&dhcp->offered_ip_addr)));
+        memcpy(mask,ip4addr_ntoa(&dhcp->offered_sn_mask),strlen(ip4addr_ntoa(&dhcp->offered_sn_mask)));
+        memcpy(gateway,ip4addr_ntoa(&dhcp->offered_gw_addr),strlen(ip4addr_ntoa(&dhcp->offered_gw_addr)));
+#if LWIP_DNS
+        printf("DNS Server: %s\n", ip4addr_ntoa(dns_getserver(0)));
+#endif
+    }
+}
+
+
+mqtt_client_t *app_mqtt_client;
+uint8_t mqtt_web_address[64] = {0};
+uint8_t mqtt_account[32] = {0};
+uint8_t mqtt_password[32] = {0};
+uint8_t mqtt_subcribe_topic[32] = {0};
+uint8_t mqtt_subcribe_data[64] = {0};
+
+static void app_mqtt_sub_request_cb(void *arg, err_t result)
+{
+    /* Just print the result code here for simplicity,
+    normal behaviour would be to take some action if subscribe fails like
+    notifying user, retry subscribe or disconnect from server */
+    printf("Subscribe result: %d\n", result);
+}
+
+static void app_mqtt_unsub_request_cb(void *arg, err_t result)
+{
+    printf("Subscribe result: %d\n", result);
+}
+
+static void app_mqtt_incoming_publish_cb(void *arg, const char *topic, u32_t tot_len)
+{
+    printf("Incoming publish at topic %s with total length %u\n", topic, (unsigned int)tot_len);
+    /* Decode topic string into a user defined reference */
+
+}
+
+static void app_mqtt_incoming_data_cb(void *arg, const u8_t *data, u16_t len, u8_t flags)
+{
+    printf("Incoming publish payload with length %d, flags %u\n", len, (unsigned int)flags);
+
+    u8_t index;
+    for(index = 0; index < len; index++)
+    {
+        printf("%c",data[index]);
+    }
+    printf("\n");
+
+    memset(mqtt_subcribe_data,0,sizeof(mqtt_subcribe_data));
+    memcpy(mqtt_subcribe_data,data,len);
+
+    uint8_t *wifi_status_string;
+    cJSON *wifi_json_status = cJSON_CreateObject();
+    cJSON_AddStringToObject(wifi_json_status, "FUNC", "WIFI");
+    cJSON_AddStringToObject(wifi_json_status, "OPERATE", "WIFI_MQTT_SUBCRIBE_RECV");
+
+    cJSON_AddStringToObject(wifi_json_status, "STATUS", "SUCCESS");
+
+    cJSON_AddStringToObject(wifi_json_status, "PARAM1", (const char*)mqtt_subcribe_data);
+    cJSON_AddNumberToObject(wifi_json_status, "PARAM2", len);
+
+    wifi_status_string = (uint8_t *)cJSON_Print(wifi_json_status);
+
+    printf("%s\n",wifi_status_string);
+    cJSON_Delete(wifi_json_status);
+    free(wifi_status_string);
+
+
+
+    if(flags & MQTT_DATA_FLAG_LAST)
+    {
+        printf("MQTT_DATA_FLAG_LAST\n");
+    }
+    else
+    {
+        printf("~MQTT_DATA_FLAG_LAST\n");
+    }
+}
+
+
+static void app_mqtt_connection_cb(mqtt_client_t *client, void *arg, mqtt_connection_status_t status)
+{
+    if(status == MQTT_CONNECT_ACCEPTED)
+    {
+        printf("mqtt_connection_cb: Successfully connected\n");
+        /* Setup callback for incoming publish requests */
+        mqtt_set_inpub_callback(client, app_mqtt_incoming_publish_cb, app_mqtt_incoming_data_cb, arg);
+
+    }
+    else
+    {
+        printf("mqtt_connection_cb: Disconnected, reason: %d\n", status);
+    }
+}
+
+
+static void app_mqtt_server_find(const char *name, const ip_addr_t *ipaddr, void *callback_arg)
+{
+    if (ipaddr != NULL)
+    {
+        err_t err;
+        struct mqtt_connect_client_info_t client_info = {    "mqtt_id",  NULL, NULL,    10,    NULL, NULL, 0, 0  };
+        client_info.client_user = 	(const char*)mqtt_account;
+        client_info.client_pass = (const char*)mqtt_password;
+
+        printf("DNS Found IP: %s\n", ip4addr_ntoa(ipaddr));
+        err = mqtt_client_connect(app_mqtt_client, ipaddr, MQTT_PORT, app_mqtt_connection_cb, 0, &client_info);
+        /* For now just print the result code if something goes wrong */
+        if(err != ERR_OK)
+        {
+            printf("mqtt_connect return %d\n", err);
+        }
+    }
+    else
+        printf("DNS Not Found IP!\n");
+}
+
+void app_find_mqtt_ip()
+{
+    ip_addr_t dnsip;
+    err_t err = dns_gethostbyname((const char*)mqtt_web_address, &dnsip, app_mqtt_server_find, NULL);
+    if (err == ERR_OK)
+    {
+        printf("In cache! IP: %s\n", ip4addr_ntoa(&dnsip));
+    }
+    else if (err == ERR_INPROGRESS)
+    {
+        printf("Not in cache!\n");
+    }
+    else
+    {
+        printf("dns_gethostbyname failed! err=%d\n", err);
+    }
+}
+
+void app_mqtt_connect_server()
+{
+    app_mqtt_client = mqtt_client_new();
+
+
+    if(app_mqtt_client != NULL)
+    {
+        app_find_mqtt_ip();
+
+    }
+}
+
+
+void app_mqtt_disconnect_server()
+{
+    if(app_mqtt_client != NULL)
+    {
+        mqtt_disconnect(app_mqtt_client);
+        app_mqtt_client = NULL;
+
+    }
+}
+
+void app_mqtt_subcribe()
+{
+    if(app_mqtt_client != NULL)
+    {
+        err_t err = mqtt_subscribe(app_mqtt_client, (const char*)mqtt_subcribe_topic, 1, app_mqtt_sub_request_cb, NULL);
+        if(err != ERR_OK)
+        {
+            printf("mqtt_subscribe return: %d\n", err);
+        }
+
+    }
+}
+
+void app_mqtt_unsubcribe()
+{
+    if(app_mqtt_client != NULL)
+    {
+        err_t err = mqtt_unsubscribe(app_mqtt_client,(const char*)mqtt_subcribe_topic,app_mqtt_unsub_request_cb,NULL);
+        if(err != ERR_OK)
+        {
+            printf("mqtt_subscribe return: %d\n", err);
+        }
+    }
+}
+
+static void app_mqtt_publish_request_cb(void *arg, err_t result)
+{
+    printf("publish result: %d\n", result);
+}
+
+void app_mqtt_publish(uint8_t *topic,uint8_t *data,uint16_t data_len)
+{
+    if(app_mqtt_client != NULL)
+    {
+        err_t err = mqtt_publish(app_mqtt_client,(const char*)topic,data,data_len,1,0,app_mqtt_publish_request_cb,NULL);
+        if(err != ERR_OK)
+        {
+            printf("app_mqtt_publish return: %d\n", err);
+        }
+    }
+}
+
+uint8_t uart_receive_parse(uint8_t *shell_string)
+{
+#if 1
+    cJSON* parse_json = cJSON_Parse((const char *)shell_string);
+    uint8_t* func_value = (uint8_t*)((cJSON *)cJSON_GetObjectItem(parse_json,"FUNC"))->valuestring;
+    uint8_t* operate_value = (uint8_t*)((cJSON *)cJSON_GetObjectItem(parse_json,"OPERATE"))->valuestring;
+    uint8_t* para1 = (uint8_t*)((cJSON *)cJSON_GetObjectItem(parse_json,"PARAM1"))->valuestring;
+    uint8_t* para2 = (uint8_t*)((cJSON *)cJSON_GetObjectItem(parse_json,"PARAM2"))->valuestring;
+    uint8_t* para3 = (uint8_t*)((cJSON *)cJSON_GetObjectItem(parse_json,"PARAM3"))->valuestring;
+    uint8_t* para4 = (uint8_t*)((cJSON *)cJSON_GetObjectItem(parse_json,"PARAM4"))->valuestring;
+    uint8_t* para5 = (uint8_t*)((cJSON *)cJSON_GetObjectItem(parse_json,"PARAM5"))->valuestring;
+
+    if(strcmp((const char *)shell_string,"WIFI_ON") == 0)
+    {
+        /* WIFI ON */
+        printf("WIFI_ON\n");
+        wifi_start(WIFI_TYPE_SDIO);
+    }
+
+    if(strcmp((const char *)shell_string,"WIFI_CON") == 0)
+    {
+        /* WIFI ON */
+        printf("WIFI_CONN\n");
+        wifi_connect_ap("WIFI_AP",strlen("WIFI_AP"),"12345678",strlen("12345678"));
+    }
+
+    if(strcmp((const char *)shell_string,"WIFI_IP") == 0)
+    {
+        static uint8_t ip[30] = {0};
+        static uint8_t mask[30] = {0};
+        static uint8_t gateway[30] = {0};
+        app_udp_dhcp_show_ip(ip,mask,gateway);
+        printf("ip %s,mask %s,gateway %s\n",ip,mask,gateway);
+    }
+
+    if(strcmp((const char *)func_value,"WIFI") == 0)
+    {
+        if(strcmp((const char *)operate_value,"WIFI_ON") == 0)
+        {
+            /* WIFI ON */
+            printf("WIFI_ON\n");
+            wifi_start(WIFI_TYPE_SDIO);
+        }
+
+        if(strcmp((const char *)operate_value,"WIFI_OFF") == 0)
+        {
+            /* WIFI OFF */
+            printf("WIFI_OFF\n");
+        }
+
+        if(strcmp((const char *)operate_value,"WIFI_SCAN") == 0)
+        {
+            /* WIFI SCAN */
+            printf("WIFI_SCAN\n");
+            uint8_t index = 0;
+            scan_condition_t scan_condition;
+            hw_memset(&scan_condition,0,sizeof(scan_condition));
+            for(index = 0; index < 14; index++)
+            {
+                scan_condition.channel[index] = index+1;
+            }
+            scan_condition.channel_num = 14;
+            scan_condition.scan_max_time = 200;
+            HW_DEBUG("SHELL:operate wifi scan\n");
+            wifi_start_scan(&scan_condition);
+        }
+
+        if(strcmp((const char *)operate_value,"WIFI_SCAN_SSID") == 0)
+        {
+            /* WIFI SCAN SSID */
+            printf("WIFI_SCAN_SSID\n");
+        }
+
+        if(strcmp((const char *)operate_value,"WIFI_CONNECT") == 0)
+        {
+            /* WIFI CONNECT */
+            printf("WIFI_CONNECT\n");
+            wifi_connect_ap(para1,strlen((const char*)para1),para2,strlen((const char*)para2));
+        }
+
+        if(strcmp((const char *)operate_value,"WIFI_DISCONNECT") == 0)
+        {
+            /* WIFI DISCONNECT */
+            printf("WIFI_DISCONNECT\n");
+            wifi_disconnect_ap();
+        }
+
+        if(strcmp((const char *)operate_value,"WIFI_SHOW_IP") == 0)
+        {
+            static uint8_t ip[30] = {0};
+            static uint8_t mask[30] = {0};
+            static uint8_t gateway[30] = {0};
+            uint8_t *wifi_status_string;
+            cJSON *wifi_json_status = cJSON_CreateObject();
+            /* WIFI DISCONNECT */
+            printf("WIFI_SHOW_IP\n");
+            app_udp_dhcp_show_ip(ip,mask,gateway);
+            printf("ip %s,mask %s,gateway %s\n",ip,mask,gateway);
+
+            printf("----------------------------------\n");
+
+            cJSON_AddStringToObject(wifi_json_status, "FUNC", "WIFI");
+            cJSON_AddStringToObject(wifi_json_status, "OPERATE", "WIFI_SHOW_IP");
+            cJSON_AddStringToObject(wifi_json_status, "STATUS", "SUCCESS");
+            cJSON_AddStringToObject(wifi_json_status, "PARAM1", (const char*)ip);
+            cJSON_AddStringToObject(wifi_json_status, "PARAM2", (const char*)mask);
+            cJSON_AddStringToObject(wifi_json_status, "PARAM3", (const char*)gateway);
+            wifi_status_string = (uint8_t *)cJSON_Print(wifi_json_status);
+
+            printf("%s\n",wifi_status_string);
+            cJSON_Delete(wifi_json_status);
+            free(wifi_status_string);
+        }
+
+
+
+        if(strcmp((const char *)operate_value,"WIFI_START_AP") == 0)
+        {
+            /* WIFI START AP */
+            printf("WIFI_START_AP\n");
+            ap_info_t ap_info;
+            hw_memset(&ap_info,0,sizeof(ap_info_t));
+            hw_memcpy(ap_info.ssid,para1,hw_strlen((const char*)para1));
+            ap_info.ssid_len= hw_strlen((const char*)para1);
+
+            if(hw_strcmp((const char*)para3,"OPEN") == 0)
+                ap_info.security = WIFI_SECURITY_NONE;
+            else if(hw_strcmp((const char*)para3,"WPA") == 0)
+            {
+                hw_memcpy(ap_info.pwd,para2,hw_strlen((const char*)para2));
+                ap_info.pwd_len= hw_strlen((const char*)para2);
+                ap_info.security = WIFI_SECURITY_WPA;
+            }
+            else if(hw_strcmp((const char*)para3,"WPA2") == 0)
+            {
+                hw_memcpy(ap_info.pwd,para2,hw_strlen((const char*)para2));
+                ap_info.pwd_len= hw_strlen((const char*)para2);
+                ap_info.security = WIFI_SECURITY_WPA2;
+            }
+
+            if(hw_strcmp((const char*)para4,"HIDDEN") == 0)
+                ap_info.broadcast_ssid = 0;
+            else
+                ap_info.broadcast_ssid = 1;
+
+            wifi_start_ap(&ap_info);
+        }
+
+        if(strcmp((const char *)operate_value,"WIFI_STOP_AP") == 0)
+        {
+            /* WIFI STOP AP */
+            printf("WIFI_STOP_AP\n");
+            wifi_stop_ap();
+        }
+
+        if(strcmp((const char *)operate_value,"WIFI_DISCONNECT_STA") == 0)
+        {
+            printf("WIFI_DISCONNECT_STA\n");
+            uint8_t index = 0;
+            uint8_t mac_address[6] = {0};
+            for(index = 0; index < 6; index++)
+                mac_address[index] = (nibble_for_char(*(para1+index*3)) << 4) | nibble_for_char(*(para1+index*3 + 1));
+            wifi_disconnect_sta(mac_address);
+        }
+
+        if(strcmp((const char *)operate_value,"WIFI_PING") == 0)
+        {
+            ip4addr_aton((const char *)para1,&ping_ipaddr);
+            ping_init(&ping_ipaddr,wifi_ping_runing_hook);
+        }
+
+        if(strcmp((const char *)operate_value,"WIFI_STOP_PING") == 0)
+        {
+            ping_deinit(wifi_ping_stop_hook);
+        }
+
+
+        if(strcmp((const char *)operate_value,"WIFI_UDP_CONNECT") == 0)
+        {
+            udp_local_port = atoi((const char*)para2);
+            udp_remote_port = atoi((const char*)para3);
+            ip4addr_aton((const char *)para1,&udp_remote_ipaddr);
+            udp_active_pcb = udp_new();
+            udp_bind(udp_active_pcb, IP4_ADDR_ANY, udp_local_port);
+            udp_recv(udp_active_pcb, app_udp_recv, NULL);
+        }
+
+        if(strcmp((const char *)operate_value,"WIFI_UDP_DISCONNECT") == 0)
+        {
+            if(udp_active_pcb)
+            {
+                udp_remove(udp_active_pcb);
+                udp_active_pcb = NULL;
+            }
+        }
+
+        if(strcmp((const char *)operate_value,"WIFI_UDP_SEND") == 0)
+        {
+            if(udp_active_pcb)
+            {
+                uint16_t send_len = atoi((const char*)para2);
+                struct pbuf *send;
+                send = pbuf_alloc(PBUF_TRANSPORT, send_len, PBUF_ROM);
+                if (send != NULL)
+                {
+                    printf("Sending UDP packets...\n");
+                    send->payload = para1;
+                    udp_sendto(udp_active_pcb, send, &udp_remote_ipaddr, udp_remote_port);
+                    pbuf_free(send);
+                }
+            }
+            else
+                printf("no activer udp pcb\n");
+        }
+
+        if(strcmp((const char *)operate_value,"WIFI_TCPC_CONNECT") == 0)
+        {
+            err_t err;
+            tcp_remote_server_port = atoi((const char*)para3);
+
+            tcp_client_active_pcb = tcp_new();
+
+            ip4addr_aton((const char*)para1,&tcp_server_ip);
+            err = tcp_connect(tcp_client_active_pcb, &tcp_server_ip, tcp_remote_server_port, app_tcp_client_connect);
+            if (err != ERR_OK)
+            {
+                printf("Connection failed! err=%d\n", err);
+                tcp_close(tcp_client_active_pcb);
+            }
+        }
+
+        if(strcmp((const char *)operate_value,"WIFI_TCPS_CONNECT") == 0)
+        {
+            memset(tcp_client,0,sizeof(tcp_server_client_t)*TCP_CLIENT_COUNT);
+            tcp_server_active_pcb = tcp_new();
+            tcp_local_server_port = atoi((const char*)para2);
+            printf("tcp server port %d\n",tcp_local_server_port);
+            tcp_bind(tcp_server_active_pcb, IP4_ADDR_ANY, tcp_local_server_port);
+            tcp_server_active_pcb = tcp_listen(tcp_server_active_pcb);
+            tcp_accept(tcp_server_active_pcb, app_tcp_server_accept);
+        }
+
+        if(strcmp((const char *)operate_value,"WIFI_TCPC_DISCONNECT") == 0)
+        {
+            if(tcp_client_active_pcb)
+            {
+                tcp_close(tcp_client_active_pcb);
+                tcp_client_active_pcb = NULL;
+            }
+        }
+
+        if(strcmp((const char *)operate_value,"WIFI_TCPS_DISCONNECT") == 0)
+        {
+            if(tcp_server_active_pcb)
+            {
+                memset(tcp_client,0,sizeof(tcp_server_client_t)*TCP_CLIENT_COUNT);
+                tcp_close(tcp_server_active_pcb);
+                tcp_server_active_pcb = NULL;
+            }
+        }
+
+        if(strcmp((const char *)operate_value,"WIFI_TCPC_SEND") == 0)
+        {
+
+            if(tcp_client_active_pcb)
+            {
+                uint16_t send_len = atoi((const char*)para2);
+
+                printf("Sending TCP client packets...\n");
+                tcp_write(tcp_client_active_pcb, para1, send_len,1);
+            }
+            else
+                printf("no activer tcp client pcb\n");
+        }
+
+        if(strcmp((const char *)operate_value,"WIFI_TCPS_SEND") == 0)
+        {
+            uint8_t index = 0;
+            uint16_t send_len = atoi((const char*)para4);
+            ip_addr_t tcp_temp_client_ip;
+            ip4addr_aton((const char*)para1,&tcp_temp_client_ip);
+            for(index = 0; index < TCP_CLIENT_COUNT; index++)
+            {
+                if(ip4_addr_cmp(&tcp_temp_client_ip,&(tcp_client[index].tcp_client_ip)))
+                {
+                    printf("tcp server write to client ip %s,port %d\n",(const char*)ipaddr_ntoa(&(tcp_client[index].tcp_client_pcb->remote_ip)),(tcp_client[index].tcp_client_pcb->remote_port));
+                    tcp_write(tcp_client[index].tcp_client_pcb, para3, send_len,1);
+                    break;
+                }
+            }
+        }
+
+        if(strcmp((const char *)operate_value,"WIFI_MQTT_CONNECT") == 0)
+        {
+            memset(mqtt_web_address,0,64);
+            memset(mqtt_account,0,32);
+            memset(mqtt_password,0,32);
+
+            memcpy(mqtt_web_address,para1,strlen((const char*)para1));
+            memcpy(mqtt_account,para2,strlen((const char*)para2));
+            memcpy(mqtt_password,para3,strlen((const char*)para3));
+            app_mqtt_connect_server();
+        }
+
+        if(strcmp((const char *)operate_value,"WIFI_MQTT_DISCONNECT") == 0)
+        {
+            app_mqtt_disconnect_server();
+        }
+
+        if(strcmp((const char *)operate_value,"WIFI_MQTT_SUBCRIBE") == 0)
+        {
+            memset(mqtt_subcribe_topic,0,32);
+            memcpy(mqtt_subcribe_topic,para1,strlen((const char*)para1));
+            app_mqtt_subcribe();
+        }
+
+        if(strcmp((const char *)operate_value,"WIFI_MQTT_UNSUBCRIBE") == 0)
+        {
+            app_mqtt_unsubcribe();
+        }
+
+        if(strcmp((const char *)operate_value,"WIFI_MQTT_PUBLISH") == 0)
+        {
+            uint16_t data_len = atoi((const char*)para3);
+            app_mqtt_publish(para1,para2,data_len);
+        }
+
+    }
+    cJSON_Delete(parse_json);
+#else
+    if(hw_strcmp("WIFI_ON",(const char*)shell_string) == 0)
+    {
+        HW_DEBUG("SHELL:operate wifi on\n");
+        wifi_start(WIFI_TYPE_SDIO);
+        hw_oled_clear();
+        hw_oled_show_string(1,0,"FUNC:WiFi",16);
+        return HW_ERR_OK;
+    }
+    if(hw_strcmp("WIFI_SCAN",(const char*)shell_string) == 0)
+    {
+        uint8_t index = 0;
+        scan_condition_t scan_condition;
+        hw_memset(&scan_condition,0,sizeof(scan_condition));
+        for(index = 0; index < 14; index++)
+        {
+            scan_condition.channel[index] = index+1;
+        }
+        scan_condition.channel_num = 14;
+        scan_condition.scan_max_time = 200;
+        HW_DEBUG("SHELL:operate wifi scan\n");
+        wifi_start_scan(&scan_condition);
+        hw_oled_clear();
+        hw_oled_show_string(1,0,"FUNC:WiFi",16);
+        return HW_ERR_OK;
+    }
+    if(hw_strcmp("WIFI_SCAN_SSID",(const char*)shell_string) == 0)
+    {
+        uint8_t index = 0;
+        scan_condition_t scan_condition;
+        hw_memset(&scan_condition,0,sizeof(scan_condition));
+        hw_memcpy(scan_condition.ssid,"OPPOA3",hw_strlen("OPPOA3"));
+        scan_condition.ssid_len = hw_strlen((const char *)scan_condition.ssid);
+        for(index = 0; index < 14; index++)
+        {
+            scan_condition.channel[index] = index+1;
+        }
+        scan_condition.channel_num = 14;
+        scan_condition.scan_max_time = 200;
+        HW_DEBUG("SHELL:operate wifi scan ssid\n");
+        wifi_start_scan(&scan_condition);
+        hw_oled_clear();
+        hw_oled_show_string(1,0,"FUNC:WiFi",16);
+        return HW_ERR_OK;
+    }
+    if(hw_strcmp("WIFI_CONNECT",(const char*)shell_string) == 0)
+    {
+        HW_DEBUG("SHELL:operate wifi connect ssid\n");
+        //wifi_connect_ap("ANWSOFT",7,"1020304050",10);
+        //wifi_connect_ap("WIFI_AP",7,"12345678",8);
+        wifi_connect_ap("ZHONGJUN_AP",hw_strlen("ZHONGJUN_AP"),"12345678",8);
+        //wifi_connect_ap("WIFI_PC",7,"12345678",8);
+        hw_oled_clear();
+        hw_oled_show_string(1,0,"FUNC:WiFi",16);
+        return HW_ERR_OK;
+    }
+
+    if(hw_strcmp("WIFI_DISCONNECT",(const char*)shell_string) == 0)
+    {
+        HW_DEBUG("SHELL:operate wifi disconnect ssid\n");
+        wifi_disconnect_ap();
+
+        hw_oled_clear();
+        hw_oled_show_string(1,0,"FUNC:WiFi",16);
+        return HW_ERR_OK;
+    }
+
+
+    if(hw_strncmp("WIFI_AP:",(const char*)shell_string,hw_strlen("WIFI_AP:")) == 0)
+    {
+        ap_info_t ap_info;
+
+        shell_string += hw_strlen("WIFI_AP:");
+
+        if(hw_strcmp("DEFAULT",(const char*)shell_string) == 0)
+        {
+            wifi_start_ap(NULL);
+            hw_oled_clear();
+            hw_oled_show_string(1,0,"FUNC:WiFi",16);
+            return HW_ERR_OK;
+        }
+        else if(hw_strcmp("OPEN",(const char*)shell_string) == 0)
+        {
+            HW_DEBUG("SHELL:operate wifi create open ap\n");
+            hw_memset(&ap_info,0,sizeof(ap_info_t));
+            hw_memcpy(ap_info.ssid,"IoT_lwos_wifi_open",hw_strlen("IoT_lwos_wifi_open"));
+            ap_info.ssid_len= hw_strlen("IoT_lwos_wifi_open");
+            ap_info.security = WIFI_SECURITY_NONE;
+            ap_info.broadcast_ssid = 1;
+        }
+        else if(hw_strcmp("WPA",(const char*)shell_string) == 0)
+        {
+            HW_DEBUG("SHELL:operate wifi create open wpa ap\n");
+            hw_memset(&ap_info,0,sizeof(ap_info_t));
+            hw_memcpy(ap_info.ssid,"IoT_lwos_wifi_wpa",hw_strlen("IoT_lwos_wifi_wpa"));
+            ap_info.ssid_len= hw_strlen("IoT_lwos_wifi_wpa");
+            hw_memcpy(ap_info.pwd,"12345678",hw_strlen("12345678"));
+            ap_info.pwd_len= hw_strlen("12345678");
+            ap_info.security = WIFI_SECURITY_WPA;
+            ap_info.broadcast_ssid = 1;
+        }
+        else if(hw_strcmp("WPA2",(const char*)shell_string) == 0)
+        {
+            HW_DEBUG("SHELL:operate wifi create open wpa2 ap\n");
+            hw_memset(&ap_info,0,sizeof(ap_info_t));
+            hw_memcpy(ap_info.ssid,"IoT_lwos_wifi_wpa2",hw_strlen("IoT_lwos_wifi_wpa2"));
+            ap_info.ssid_len= hw_strlen("IoT_lwos_wifi_wpa2");
+            hw_memcpy(ap_info.pwd,"12345678",hw_strlen("12345678"));
+            ap_info.pwd_len= hw_strlen("12345678");
+            ap_info.security = WIFI_SECURITY_WPA2;
+            ap_info.broadcast_ssid = 1;
+        }
+        else
+        {
+            HW_DEBUG("SHELL:operate wifi create ap fail:invalid para\n");
+            return HW_ERR_SHELL_INVALID_PARA;
+        }
+
+        wifi_start_ap(&ap_info);
+        hw_oled_clear();
+        hw_oled_show_string(1,0,"FUNC:WiFi",16);
+        return HW_ERR_OK;
+    }
+
+    if(hw_strcmp("HIDDEN_AP",(const char*)shell_string) == 0)
+    {
+        ap_info_t ap_info;
+        HW_DEBUG("SHELL:operate wifi create hidden wpa2 ap\n");
+        hw_memset(&ap_info,0,sizeof(ap_info_t));
+        hw_memcpy(ap_info.ssid,"hidden_wpa2",hw_strlen("hidden_wpa2"));
+        ap_info.ssid_len= hw_strlen("hidden_wpa2");
+        hw_memcpy(ap_info.pwd,"12345678",hw_strlen("12345678"));
+        ap_info.pwd_len= hw_strlen("12345678");
+        ap_info.security = WIFI_SECURITY_WPA2;
+        ap_info.broadcast_ssid = 0;
+
+        wifi_start_ap(&ap_info);
+        hw_oled_clear();
+        hw_oled_show_string(1,0,"FUNC:WiFi",16);
+        return HW_ERR_OK;
+    }
+
+    if(hw_strcmp("STOP_AP",(const char*)shell_string) == 0)
+    {
+        HW_DEBUG("SHELL:operate wifi stop ap\n");
+        wifi_stop_ap();
+
+        hw_oled_clear();
+        hw_oled_show_string(1,0,"FUNC:WiFi",16);
+        return HW_ERR_OK;
+    }
+
+    if(hw_strcmp("WIFI_DISCONNECT_STA",(const char*)shell_string) == 0)
+    {
+        HW_DEBUG("SHELL:operate wifi disconnect sta ssid\n");
+        wifi_disconnect_sta(0);
+
+        hw_oled_clear();
+        hw_oled_show_string(1,0,"FUNC:WiFi",16);
+        return HW_ERR_OK;
+    }
+
+    if(hw_strcmp("WIFI_SHOW_STA",(const char*)shell_string) == 0)
+    {
+        HW_DEBUG("SHELL:operate wifi show sta\n");
+
+        wifi_show_sta();
+        hw_oled_clear();
+        hw_oled_show_string(1,0,"FUNC:WiFi",16);
+        return HW_ERR_OK;
+    }
+
+    if(hw_strncmp("DNS_TEST:",(const char*)shell_string,hw_strlen("DNS_TEST:")) == 0)
+    {
+        HW_DEBUG("SHELL:operate dns\n");
+        shell_string += hw_strlen("DNS_TEST:");
+        udp_dns_test((const char*)shell_string);
+        return HW_ERR_OK;
+    }
+
+    if(hw_strcmp("ECHO_TEST",(const char*)shell_string) == 0)
+    {
+        HW_DEBUG("SHELL:operate echo test\n");
+        udp_echo_test();
+        return HW_ERR_OK;
+    }
+
+    if(hw_strcmp("SPEED_TEST",(const char*)shell_string) == 0)
+    {
+        HW_DEBUG("SHELL:operate speed test\n");
+        udp_speed_test();
+        return HW_ERR_OK;
+    }
+
+    if(hw_strcmp("SHOW_IP",(const char*)shell_string) == 0)
+    {
+        HW_DEBUG("SHELL:operate show ip\n");
+        udp_dhcp_show_ip();
+        return HW_ERR_OK;
+    }
+
+    if(hw_strncmp("TCPS_TEST:",(const char*)shell_string,hw_strlen("TCPS_TEST:")) == 0)
+    {
+        uint16_t port;
+        HW_DEBUG("SHELL:operate tcp server test\n");
+        shell_string += hw_strlen("TCPS_TEST:");
+        port = atoi((const char*)shell_string);
+        tcp_server_test(port);
+        return HW_ERR_OK;
+    }
+
+    if(hw_strncmp("TCPC_TEST:",(const char*)shell_string,hw_strlen("TCPC_TEST:")) == 0)
+    {
+        uint16_t port;
+        char ip[16];
+        uint8_t index = 0;
+        HW_DEBUG("SHELL:operate tcp client test\n");
+        hw_memset(ip,0,sizeof(ip));
+
+        shell_string += hw_strlen("TCPC_TEST:IP:");
+        while(*shell_string != ';')
+        {
+            ip[index++] = *shell_string;
+            if(index > 15)
+                break;
+            shell_string++;
+        }
+
+        if(hw_strncmp("PORT:",(const char*)(++shell_string),hw_strlen("PORT:")) == 0)
+        {
+            shell_string += hw_strlen("PORT:");
+            port = atoi((const char*)shell_string);
+            tcp_client_test(ip,port);
+        }
+
+        return HW_ERR_OK;
+    }
+
+    if(hw_strcmp("HTTPS_TEST",(const char*)shell_string) == 0)
+    {
+        HW_DEBUG("SHELL:operate http server\n");
+        tcp_http_server_test();
+        return HW_ERR_OK;
+    }
+    if(hw_strcmp("MQTT_TEST",(const char*)shell_string) == 0)
+    {
+        HW_DEBUG("SHELL:operate connect mqtt server\n");
+        mqtt_connect_server();
+        return HW_ERR_OK;
+    }
+    if(hw_strcmp("HTTPC_TEST",(const char*)shell_string) == 0)
+    {
+        HW_DEBUG("SHELL:operate http client test\n");
+        tcp_http_client_test();
+        return HW_ERR_OK;
+    }
+#endif
+
+    return 0;
+}
+
+
+
+
+/******************************************************************************
+ *	函数名:	wifi_start
+ * 参数:  		type(IN)		-->wifi device接口类型
+ * 返回值: 	返回执行结果
+ * 描述:		启动wifi
+******************************************************************************/
+uint8_t wifi_start(wifi_type_e type)
+{
+    if(type <= WIFI_TYPE_NONE && type >= WIFI_TYPE_MAX )
+    {
+        return WIFI_ERR_INVALID_TYPE;
+    }
+
+    pwifi_wrapper_core->status = WIFI_STATUS_NONE;
+    pwifi_wrapper_core->type = type;
+
+    switch(type)
+    {
+    case WIFI_TYPE_AT:
+    {
+        /* 处理AT指令接口(UART)的WIFI设备 */
+        break;
+    }
+    case WIFI_TYPE_SDIO:
+    {
+        uint16_t vendor_id;
+        uint16_t device_id;
+
+        /* 处理SDIO接口的WIFI设备 */
+        hw_sdio_init();
+        vendor_id = phw_sdio_core->manf_code;
+        device_id = phw_sdio_core->manf_info;
+
+        if(vendor_id == VENDOR_MARVELL)
+        {
+            /* Vendor ID:marvell的设备 */
+            if(device_id == MARVELL88W8801_DEV_ID)
+            {
+                mrvl88w8801_init(&wifi_cb);
+                pwifi_wrapper_core->status = WIFI_STATUS_INIT;
+                pwifi_wrapper_core->current_mode = WIFI_MODE_STA;
+            }
+            /*else if(vendor_id == 扩展设备){} */
+
+        }
+        /*else if(vendor_id == 扩展制造商){} */
+        break;
+    }
+    case WIFI_TYPE_USB:
+    {
+        /* 处理USB接口的WIFI设备 */
+        break;
+    }
+    default:
+        break;
+    }
+
+    return WIFI_ERR_OK;
+}
+
+uint8_t wifi_process_packet()
+{
+    uint8_t type = pwifi_wrapper_core->type;
+    if(type <= WIFI_TYPE_NONE && type >= WIFI_TYPE_MAX )
+    {
+        return WIFI_ERR_INVALID_TYPE;
+    }
+
+    switch(type)
+    {
+    case WIFI_TYPE_AT:
+    {
+        /* 处理AT指令接口(UART)的WIFI设备 */
+        break;
+    }
+    case WIFI_TYPE_SDIO:
+    {
+        uint16_t vendor_id;
+        uint16_t device_id;
+
+        vendor_id = phw_sdio_core->manf_code;
+        device_id = phw_sdio_core->manf_info;
+
+        if(vendor_id == VENDOR_MARVELL)
+        {
+            /* Vendor ID:marvell的设备 */
+            if(device_id == MARVELL88W8801_DEV_ID)
+            {
+                mrvl88w8801_process_packet();
+            }
+            /*else if(vendor_id == 扩展设备){} */
+
+        }
+        /*else if(vendor_id == 扩展制造商){} */
+        break;
+    }
+    case WIFI_TYPE_USB:
+    {
+        /* 处理USB接口的WIFI设备 */
+        break;
+    }
+    default:
+        break;
+    }
+
+    return WIFI_ERR_OK;
+}
+
+/******************************************************************************
+ *	函数名:	wifi_stop
+ * 参数:  		NULL
+ * 返回值: 	返回执行结果
+ * 描述:		停止wifi
+******************************************************************************/
+uint8_t wifi_stop()
+{
+    wifi_type_e type = pwifi_wrapper_core->type;
+    if(pwifi_wrapper_core->status < WIFI_STATUS_INIT )
+    {
+        return WIFI_ERR_NOT_INIT;
+    }
+
+    switch(type)
+    {
+    case WIFI_TYPE_AT:
+    {
+        /* 处理AT指令接口(UART)的WIFI设备 */
+        break;
+    }
+    case WIFI_TYPE_SDIO:
+    {
+        /* 处理SDIO接口的WIFI设备 */
+        break;
+    }
+    case WIFI_TYPE_USB:
+    {
+        /* 处理USB接口的WIFI设备 */
+        break;
+    }
+    default:
+        break;
+    }
+
+    return WIFI_ERR_OK;
+}
+
+/******************************************************************************
+ *	函数名:	wifi_change_mode
+ * 参数:  		mode(IN)			-->改变接口模式
+ * 返回值: 	返回执行结果
+ * 描述:		改变接口模式
+******************************************************************************/
+uint8_t wifi_change_mode(wifi_mode_e mode)
+{
+    if(pwifi_wrapper_core->status < WIFI_STATUS_INIT )
+    {
+        return WIFI_ERR_NOT_INIT;
+    }
+
+    if(mode <= WIFI_MODE_NONE && mode >= WIFI_MODE_MAX)
+    {
+        return WIFI_ERR_INVALID_MODE;
+    }
+    return WIFI_ERR_OK;
+}
+/******************************************************************************
+ *	函数名:	wifi_start_scan
+ * 参数:  		scan_condition(IN)		-->搜索条件指针
+ * 返回值: 	返回执行结果
+ * 描述:		开始搜索
+******************************************************************************/
+uint8_t wifi_start_scan(pscan_condition_t scan_condition)
+{
+    uint8_t type = pwifi_wrapper_core->type;
+    if(pwifi_wrapper_core->status < WIFI_STATUS_INIT )
+    {
+        return WIFI_ERR_NOT_INIT;
+    }
+
+    if(pwifi_wrapper_core->status == WIFI_STATUS_SCANING)
+    {
+        return WIFI_ERR_ALREDY_SCANING;
+    }
+
+    if((pwifi_wrapper_core->current_mode & WIFI_MODE_STA)  != WIFI_MODE_STA)
+    {
+        return WIFI_ERR_SCAN_INVALID_MODE;
+    }
+
+    if(type <= WIFI_TYPE_NONE && type >= WIFI_TYPE_MAX )
+    {
+        return WIFI_ERR_INVALID_TYPE;
+    }
+
+    switch(type)
+    {
+    case WIFI_TYPE_AT:
+    {
+        /* 处理AT指令接口(UART)的WIFI设备 */
+        break;
+    }
+    case WIFI_TYPE_SDIO:
+    {
+        uint16_t vendor_id;
+        uint16_t device_id;
+
+        vendor_id = phw_sdio_core->manf_code;
+        device_id = phw_sdio_core->manf_info;
+
+        if(vendor_id == VENDOR_MARVELL)
+        {
+            /* Vendor ID:marvell的设备 */
+            if(device_id == MARVELL88W8801_DEV_ID)
+            {
+                if(scan_condition->ssid_len)
+                {
+
+                    mrvl88w8801_scan_ssid(scan_condition->ssid,scan_condition->ssid_len,scan_condition->scan_max_time);
+                }
+                else
+                {
+                    mrvl88w8801_scan(scan_condition->channel,scan_condition->channel_num,scan_condition->scan_max_time);
+                }
+            }
+            /*else if(vendor_id == 扩展设备){} */
+
+        }
+        /*else if(vendor_id == 扩展制造商){} */
+        break;
+    }
+    case WIFI_TYPE_USB:
+    {
+        /* 处理USB接口的WIFI设备 */
+        break;
+    }
+    default:
+        break;
+    }
+
+    return WIFI_ERR_OK;
+
+}
+
+/******************************************************************************
+ *	函数名:	wifi_stop_scan
+ * 参数:  		NULL
+ * 返回值: 	返回执行结果
+ * 描述:		停止搜索
+******************************************************************************/
+uint8_t wifi_stop_scan()
+{
+    if(pwifi_wrapper_core->status != WIFI_STATUS_SCANING)
+    {
+        return WIFI_ERR_NOT_SCANING;
+    }
+
+    return WIFI_ERR_OK;
+}
+
+/******************************************************************************
+ *	函数名:	wifi_connect_ap
+ * 参数:  		ssid(IN)			-->要连接的热点名称
+ 				ssid_len(IN)		-->要连接的热点名称长度
+ * 返回值: 	返回执行结果
+ * 描述:		连接一个热点
+******************************************************************************/
+uint8_t wifi_connect_ap(uint8_t *ssid,uint8_t ssid_len,uint8_t *pwd,uint8_t pwd_len)
+{
+    uint8_t type = pwifi_wrapper_core->type;
+    if(pwifi_wrapper_core->status < WIFI_STATUS_INIT )
+    {
+        return WIFI_ERR_NOT_INIT;
+    }
+
+    if(((pwifi_wrapper_core->current_mode & WIFI_MODE_STA)  != WIFI_MODE_STA) &&
+            ((pwifi_wrapper_core->current_mode & WIFI_MODE_AP)  != WIFI_MODE_AP))
+    {
+        return WIFI_ERR_SCAN_INVALID_MODE;
+    }
+
+    if(type <= WIFI_TYPE_NONE && type >= WIFI_TYPE_MAX )
+    {
+        return WIFI_ERR_INVALID_TYPE;
+    }
+
+    switch(type)
+    {
+    case WIFI_TYPE_AT:
+    {
+        /* 处理AT指令接口(UART)的WIFI设备 */
+        break;
+    }
+    case WIFI_TYPE_SDIO:
+    {
+        uint16_t vendor_id;
+        uint16_t device_id;
+
+        vendor_id = phw_sdio_core->manf_code;
+        device_id = phw_sdio_core->manf_info;
+
+        if(vendor_id == VENDOR_MARVELL)
+        {
+            /* Vendor ID:marvell的设备 */
+            if(device_id == MARVELL88W8801_DEV_ID)
+            {
+                mrvl88w8801_connect(ssid,ssid_len,pwd,pwd_len);
+            }
+            /*else if(vendor_id == 扩展设备){} */
+
+        }
+        /*else if(vendor_id == 扩展制造商){} */
+        break;
+    }
+    case WIFI_TYPE_USB:
+    {
+        /* 处理USB接口的WIFI设备 */
+        break;
+    }
+    default:
+        break;
+    }
+
+    return WIFI_ERR_OK;
+}
+
+
+
+/******************************************************************************
+ *	函数名:	wifi_connect_apinfo
+ * 参数:  		NULL
+ * 返回值: 	返回执行结果
+ * 描述:		连接热点的信息
+******************************************************************************/
+uint8_t wifi_connect_apinfo()
+{
+    return WIFI_ERR_OK;
+}
+/******************************************************************************
+ *	函数名:	wifi_disconnect_ap
+ * 参数:  		NULL
+ * 返回值: 	返回执行结果
+ * 描述:		断开连接
+******************************************************************************/
+uint8_t wifi_disconnect_ap()
+{
+    uint8_t type = pwifi_wrapper_core->type;
+    if(pwifi_wrapper_core->status < WIFI_STATUS_INIT )
+    {
+        return WIFI_ERR_NOT_INIT;
+    }
+
+    if(((pwifi_wrapper_core->current_mode & WIFI_MODE_STA)  != WIFI_MODE_STA) &&
+            ((pwifi_wrapper_core->current_mode & WIFI_MODE_AP)  != WIFI_MODE_AP))
+    {
+        return WIFI_ERR_SCAN_INVALID_MODE;
+    }
+
+    if(type <= WIFI_TYPE_NONE && type >= WIFI_TYPE_MAX )
+    {
+        return WIFI_ERR_INVALID_TYPE;
+    }
+
+    switch(type)
+    {
+    case WIFI_TYPE_AT:
+    {
+        /* 处理AT指令接口(UART)的WIFI设备 */
+        break;
+    }
+    case WIFI_TYPE_SDIO:
+    {
+        uint16_t vendor_id;
+        uint16_t device_id;
+
+        vendor_id = phw_sdio_core->manf_code;
+        device_id = phw_sdio_core->manf_info;
+
+        if(vendor_id == VENDOR_MARVELL)
+        {
+            /* Vendor ID:marvell的设备 */
+            if(device_id == MARVELL88W8801_DEV_ID)
+            {
+                mrvl88w8801_disconnect();
+            }
+            /*else if(vendor_id == 扩展设备){} */
+
+        }
+        /*else if(vendor_id == 扩展制造商){} */
+        break;
+    }
+    case WIFI_TYPE_USB:
+    {
+        /* 处理USB接口的WIFI设备 */
+        break;
+    }
+    default:
+        break;
+    }
+
+    return WIFI_ERR_OK;
+}
+
+/******************************************************************************
+ *	函数名:	wifi_start_ap
+ * 参数:  		ap_info(IN)			-->要创建热点的信息指针
+ * 返回值: 	返回执行结果
+ * 描述:		开始热点
+******************************************************************************/
+uint8_t wifi_start_ap(pap_info_t ap_info)
+{
+    uint8_t type = pwifi_wrapper_core->type;
+    if(pwifi_wrapper_core->status < WIFI_STATUS_INIT )
+    {
+        return WIFI_ERR_NOT_INIT;
+    }
+
+    if(type <= WIFI_TYPE_NONE && type >= WIFI_TYPE_MAX )
+    {
+        return WIFI_ERR_INVALID_TYPE;
+    }
+
+    switch(type)
+    {
+    case WIFI_TYPE_AT:
+    {
+        /* 处理AT指令接口(UART)的WIFI设备 */
+        break;
+    }
+    case WIFI_TYPE_SDIO:
+    {
+        uint16_t vendor_id;
+        uint16_t device_id;
+
+        vendor_id = phw_sdio_core->manf_code;
+        device_id = phw_sdio_core->manf_info;
+
+        if(vendor_id == VENDOR_MARVELL)
+        {
+            /* Vendor ID:marvell的设备 */
+            if(device_id == MARVELL88W8801_DEV_ID)
+            {
+                mrvl88w8801_cre_ap(ap_info->ssid,ap_info->ssid_len,ap_info->pwd,ap_info->pwd_len,ap_info->security,ap_info->broadcast_ssid);
+
+                pwifi_wrapper_core->current_mode |= WIFI_MODE_AP;
+            }
+            /*else if(vendor_id == 扩展设备){} */
+
+        }
+        /*else if(vendor_id == 扩展制造商){} */
+        break;
+    }
+    case WIFI_TYPE_USB:
+    {
+        /* 处理USB接口的WIFI设备 */
+        break;
+    }
+    default:
+        break;
+    }
+
+    return WIFI_ERR_OK;
+}
+
+uint8_t wifi_disconnect_sta(uint8_t *mac_address)
+{
+    uint8_t type = pwifi_wrapper_core->type;
+    if(pwifi_wrapper_core->status < WIFI_STATUS_INIT )
+    {
+        return WIFI_ERR_NOT_INIT;
+    }
+
+    if(type <= WIFI_TYPE_NONE && type >= WIFI_TYPE_MAX )
+    {
+        return WIFI_ERR_INVALID_TYPE;
+    }
+
+    switch(type)
+    {
+    case WIFI_TYPE_AT:
+    {
+        /* 处理AT指令接口(UART)的WIFI设备 */
+        break;
+    }
+    case WIFI_TYPE_SDIO:
+    {
+        uint16_t vendor_id;
+        uint16_t device_id;
+
+        vendor_id = phw_sdio_core->manf_code;
+        device_id = phw_sdio_core->manf_info;
+
+        if(vendor_id == VENDOR_MARVELL)
+        {
+            /* Vendor ID:marvell的设备 */
+            if(device_id == MARVELL88W8801_DEV_ID)
+            {
+                mrvl88w8801_disconnect_sta(mac_address);
+            }
+            /*else if(vendor_id == 扩展设备){} */
+
+        }
+        /*else if(vendor_id == 扩展制造商){} */
+        break;
+    }
+    case WIFI_TYPE_USB:
+    {
+        /* 处理USB接口的WIFI设备 */
+        break;
+    }
+    default:
+        break;
+    }
+
+    return WIFI_ERR_OK;
+}
+
+/******************************************************************************
+ *	函数名:	wifi_stop_ap
+ * 参数:  		NULL
+ * 返回值: 	返回执行结果
+ * 描述:		停止热点
+******************************************************************************/
+uint8_t wifi_stop_ap()
+{
+    uint8_t type = pwifi_wrapper_core->type;
+    if(pwifi_wrapper_core->status < WIFI_STATUS_INIT )
+    {
+        return WIFI_ERR_NOT_INIT;
+    }
+
+    if(type <= WIFI_TYPE_NONE && type >= WIFI_TYPE_MAX )
+    {
+        return WIFI_ERR_INVALID_TYPE;
+    }
+
+    switch(type)
+    {
+    case WIFI_TYPE_AT:
+    {
+        /* 处理AT指令接口(UART)的WIFI设备 */
+        break;
+    }
+    case WIFI_TYPE_SDIO:
+    {
+        uint16_t vendor_id;
+        uint16_t device_id;
+
+        vendor_id = phw_sdio_core->manf_code;
+        device_id = phw_sdio_core->manf_info;
+
+        if(vendor_id == VENDOR_MARVELL)
+        {
+            /* Vendor ID:marvell的设备 */
+            if(device_id == MARVELL88W8801_DEV_ID)
+            {
+                mrvl88w8801_stop_ap();
+                pwifi_wrapper_core->current_mode &= ~WIFI_MODE_AP;
+            }
+            /*else if(vendor_id == 扩展设备){} */
+
+        }
+        /*else if(vendor_id == 扩展制造商){} */
+        break;
+    }
+    case WIFI_TYPE_USB:
+    {
+        /* 处理USB接口的WIFI设备 */
+        break;
+    }
+    default:
+        break;
+    }
+
+    return WIFI_ERR_OK;
+}
+
+uint8_t wifi_show_sta()
+{
+    uint8_t type = pwifi_wrapper_core->type;
+    if(pwifi_wrapper_core->status < WIFI_STATUS_INIT )
+    {
+        return WIFI_ERR_NOT_INIT;
+    }
+
+    if(type <= WIFI_TYPE_NONE && type >= WIFI_TYPE_MAX )
+    {
+        return WIFI_ERR_INVALID_TYPE;
+    }
+
+    switch(type)
+    {
+    case WIFI_TYPE_AT:
+    {
+        break;
+    }
+    case WIFI_TYPE_SDIO:
+    {
+        uint16_t vendor_id;
+        uint16_t device_id;
+
+        vendor_id = phw_sdio_core->manf_code;
+        device_id = phw_sdio_core->manf_info;
+
+        if(vendor_id == VENDOR_MARVELL)
+        {
+            if(device_id == MARVELL88W8801_DEV_ID)
+            {
+                mrvl88w8801_show_sta();
+            }
+
+        }
+        break;
+    }
+    case WIFI_TYPE_USB:
+    {
+        break;
+    }
+    default:
+        break;
+    }
+
+    return WIFI_ERR_OK;
+}
+
+/******************************************************************************
+ *	函数名:	wifi_start_adhoc
+ * 参数:  		NULL
+ * 返回值: 	返回执行结果
+ * 描述:		开始adhoc
+******************************************************************************/
+uint8_t wifi_start_adhoc()
+{
+    return WIFI_ERR_OK;
+}
+
+/******************************************************************************
+ *	函数名:	wifi_stop_adhoc
+ * 参数:  		NULL
+ * 返回值: 	返回执行结果
+ * 描述:		停止adhoc
+******************************************************************************/
+uint8_t wifi_stop_adhoc()
+{
+    return WIFI_ERR_OK;
+}
+
+/******************************************************************************
+ *	函数名:	wifi_connect_adhoc
+ * 参数:  		NULL
+ * 返回值: 	返回执行结果
+ * 描述:		连接adhoc
+******************************************************************************/
+uint8_t wifi_connect_adhoc()
+{
+    return WIFI_ERR_OK;
+}
+
+/******************************************************************************
+ *	函数名:	wifi_disconnect_adhoc
+ * 参数:  		NULL
+ * 返回值: 	返回执行结果
+ * 描述:		从adhoc断开连接
+******************************************************************************/
+uint8_t wifi_disconnect_adhoc()
+{
+    return WIFI_ERR_OK;
+}
+
